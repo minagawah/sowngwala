@@ -424,14 +424,14 @@ fn _ut_aux(&dt: &DateTime, zone: i8) -> DateTime {
 
 /// Given local time and time zone, returns UT.
 /// (Peter Duffett-Smith, pp.12-13)
-pub fn ut_from_local(&dt: &DateTime, zone: u8) -> DateTime {
-    _ut_aux(&dt, -(zone as i8))
+pub fn ut_from_local(&dt: &DateTime, zone: i8) -> DateTime {
+    _ut_aux(&dt, -zone)
 }
 
 /// Given UT and time zone, returns local time.
 /// (Peter Duffett-Smith, p.14)
-pub fn local_from_ut(&dt: &DateTime, zone: u8) -> DateTime {
-    _ut_aux(&dt, zone as i8)
+pub fn local_from_ut(&dt: &DateTime, zone: i8) -> DateTime {
+    _ut_aux(&dt, zone)
 }
 
 pub fn normalize_time(&t: &Time) -> (Time, f64) {
@@ -466,7 +466,7 @@ pub fn eot_decimal_from_ut(&ut: &DateTime) -> f64 {
 }
 
 #[allow(clippy::many_single_char_names)]
-pub fn eot_fortified_ut_from_local(&dt: &DateTime, zone: u8) -> DateTime {
+pub fn eot_fortified_ut_from_local(&dt: &DateTime, zone: i8) -> DateTime {
     let ut: DateTime = ut_from_local(&dt, zone);
     let ut_decimal: f64 = decimal_hours_from_time(&Time::from(&ut));
     let eot_decimal: f64 = eot_decimal_from_ut(&ut);
@@ -752,7 +752,7 @@ mod tests {
 
     #[test]
     fn eot_fortified_ut_from_local_works() {
-        let zone: u8 = 9;
+        let zone: i8 = 9;
         let dt = DateTime {
             year: 2021,
             month: Month::Jan,
