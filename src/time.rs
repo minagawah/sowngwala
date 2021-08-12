@@ -1,6 +1,7 @@
 #[cfg(test)]
 extern crate approx_eq;
 
+use serde::{ Deserialize, Serialize };
 use std::convert::{ TryFrom, From };
 
 use crate::constants::{ NUM_OF_DAYS_IN_A_YEAR, J2000 };
@@ -8,7 +9,7 @@ use crate::coords::Direction;
 use crate::sun::equation_of_time_from_ut;
 use crate::utils::reduce_to_exclusive;
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Month {
     Jan = 1,
     Feb = 2,
@@ -46,7 +47,7 @@ impl TryFrom<i32> for Month {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Weekday {
     Sun = 1,
     Mon = 2,
@@ -74,21 +75,21 @@ impl TryFrom<i32> for Weekday {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct Date {
     pub year: i16,
     pub month: Month,
     pub day: f64,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct Time {
     pub hour: i16,
     pub min: i16,
     pub sec: f64,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct DateTime {
     pub year: i16,
     pub month: Month,
@@ -128,6 +129,18 @@ impl DateTime {
             min: t.min,
             sec: t.sec,
         }
+    }
+
+    pub fn iso_8601 (&self) -> String {
+        format!(
+            "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}",
+            self.year as u16,
+            self.month as u8,
+            self.day as u8,
+            self.hour as u8,
+            self.min as u8,
+            self.sec as u8
+        )
     }
 }
 
@@ -560,6 +573,23 @@ pub fn gst_from_lst(&lst: &DateTime, lng: f64, dir: Direction) -> Time {
 mod tests {
     use super::*;
     use approx_eq::assert_approx_eq;
+
+    #[test]
+    fn iso_8601_works() {
+        // Marty McFly goes back in time after the doc gets shot.
+        let dt = DateTime {
+            year: 1985,
+            month: Month::Nov,
+            day: 5.0,
+            hour: 1,
+            min: 35,
+            sec: 0.0,
+        };
+        assert_eq!(
+            dt.iso_8601(),
+            "1985-11-05T01:35:00"
+        );
+    }
 
     #[test]
     fn is_julian_date_returns_true() {
