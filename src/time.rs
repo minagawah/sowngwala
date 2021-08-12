@@ -459,21 +459,20 @@ pub fn normalize_datetime(&dt: &DateTime) -> DateTime {
     DateTime::from(&d, &t)
 }
 
+pub fn eot_decimal_from_ut(&ut: &DateTime) -> f64 {
+    decimal_hours_from_time(
+        &equation_of_time_from_ut(&ut)
+    )
+}
+
 #[allow(clippy::many_single_char_names)]
 pub fn eot_fortified_ut_from_local(&dt: &DateTime, zone: u8) -> DateTime {
     let ut: DateTime = ut_from_local(&dt, zone);
-
     let ut_decimal: f64 = decimal_hours_from_time(&Time::from(&ut));
-    let eot_decimal: f64 = decimal_hours_from_time(
-        &equation_of_time_from_ut(&ut)
-    );
-
+    let eot_decimal: f64 = eot_decimal_from_ut(&ut);
+    let d: Date = Date::from(&ut);
     let t: Time = time_from_decimal_hours(ut_decimal + eot_decimal);
-    let (time, day_excess): (Time, f64) = normalize_time(&t);
-
-    let date: Date = add_date(&Date::from(&ut), day_excess);
-
-    DateTime::from(&date, &time)
+    normalize_datetime(&DateTime::from(&d, &t))
 }
 
 /// Given UT, and retursn GST.
