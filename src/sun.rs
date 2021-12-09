@@ -119,7 +119,7 @@ pub fn equation_of_time_from_gst(&gst: &DateTime) -> Time {
     };
     let coord = equatorial_position_of_the_sun_from_date(&date);
     let asc = coord.asc;
-    let ut = ut_from_gst(&DateTime::from(&date, &asc));
+    let ut = ut_from_gst(&DateTime::new(&date, &asc));
     let decimal = decimal_hours_from_time(&ut);
     let e = 12.0 - decimal;
 
@@ -129,7 +129,7 @@ pub fn equation_of_time_from_gst(&gst: &DateTime) -> Time {
 #[allow(clippy::many_single_char_names)]
 pub fn equation_of_time_from_ut(&ut: &DateTime) -> Time {
     equation_of_time_from_gst(
-        &DateTime::from(
+        &DateTime::new(
             &Date::from(&ut),
             &gst_from_ut(&ut)
         )

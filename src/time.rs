@@ -120,7 +120,7 @@ impl From<&DateTime> for Time {
 }
 
 impl DateTime {
-    pub fn from(&d: &Date, &t: &Time) -> Self {
+    pub fn new(&d: &Date, &t: &Time) -> Self {
         DateTime {
             year: d.year,
             month: d.month,
@@ -432,7 +432,7 @@ fn _ut_aux(&dt: &DateTime, zone: i8) -> DateTime {
     let t = time_from_decimal_hours(decimal);
     let d = add_date(&Date::from(&dt), day_adjust);
 
-    DateTime::from(&d, &t)
+    DateTime::new(&d, &t)
 }
 
 /// Given local time and time zone, returns UT.
@@ -469,7 +469,7 @@ pub fn normalize_time(&t: &Time) -> (Time, f64) {
 pub fn normalize_datetime(&dt: &DateTime) -> DateTime {
     let (t, day_excess): (Time, f64) = normalize_time(&Time::from(&dt));
     let d = add_date(&Date::from(&dt), day_excess);
-    DateTime::from(&d, &t)
+    DateTime::new(&d, &t)
 }
 
 pub fn eot_decimal_from_ut(&ut: &DateTime) -> f64 {
@@ -485,7 +485,7 @@ pub fn eot_fortified_ut_from_local(&dt: &DateTime, zone: i8) -> DateTime {
     let eot_decimal: f64 = eot_decimal_from_ut(&ut);
     let d: Date = Date::from(&ut);
     let t: Time = time_from_decimal_hours(ut_decimal + eot_decimal);
-    normalize_datetime(&DateTime::from(&d, &t))
+    normalize_datetime(&DateTime::new(&d, &t))
 }
 
 /// Given UT, and retursn GST.
