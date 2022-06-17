@@ -21,8 +21,6 @@
 
 #[cfg(test)]
 extern crate approx_eq;
-#[cfg(test)]
-use crate::time::Month;
 
 use crate::time::{ Date, decimal_year_from_date };
 
@@ -201,6 +199,26 @@ fn get_after_ad2150(year: f64) -> f64 {
     -20.0 + 32.0 * u.powi(2)
 }
 
+/// Example:
+/// ```rust
+/// use approx_eq::assert_approx_eq;
+/// use sowngwala::time::{Date, Month};
+/// use sowngwala::delta_t::delta_t_from_date;
+///
+/// let date = Date {
+///     year: 1986,
+///     month: Month::Jan,
+///     day: 1.0,
+/// };
+///
+/// let delta_t = delta_t_from_date(&date);
+///
+/// assert_approx_eq!(
+///     delta_t, // 54.89627599023825
+///     54.87,
+///     1e-3
+/// );
+/// ```
 pub fn delta_t_from_date(&date: &Date) -> f64 {
     let year = decimal_year_from_date(&date);
 
@@ -248,28 +266,5 @@ pub fn delta_t_from_date(&date: &Date) -> f64 {
     }
     else {
         get_after_ad2150(year)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use approx_eq::assert_approx_eq;
-
-    #[test]
-    fn delta_t_from_date_works() {
-        let date = Date {
-            year: 1986,
-            month: Month::Jan,
-            day: 1.0,
-        };
-
-        let delta_t = delta_t_from_date(&date);
-
-        assert_approx_eq!(
-            delta_t, // 54.89627599023825
-            54.87,
-            1e-3
-        );
     }
 }

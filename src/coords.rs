@@ -71,6 +71,48 @@ pub struct HorizCoord {
 /// * `asc` - Right-ascension
 /// * `lng` - Longitude
 /// * `dir` - Direction for Longitude
+///
+/// Example:
+/// ```rust
+/// use approx_eq::assert_approx_eq;
+/// use sowngwala::time::{
+///   Time,
+///   Month,
+///   DateTime
+/// };
+/// use sowngwala::coords::{
+///   Direction,
+///   hour_angle_from_ut
+/// };
+///
+/// let dir = Direction::West;
+/// let lng = 64.0;
+///
+/// let asc = Time {
+///     hour: 18,
+///     min: 32,
+///     sec: 21.0,
+/// };
+///
+/// let ut = DateTime {
+///     year: 1980,
+///     month: Month::Apr,
+///     day: 22.0,
+///     hour: 14,
+///     min: 36,
+///     sec: 51.67,
+/// };
+///
+/// let hour_angle = hour_angle_from_ut(&ut, &asc, lng, dir);
+///
+/// assert_eq!(hour_angle.hour, 5);
+/// assert_eq!(hour_angle.min, 51);
+/// assert_approx_eq!(
+///     hour_angle.sec, // 44.22957675918951
+///     44.0,
+///     1e-2
+/// );
+/// ```
 pub fn hour_angle_from_ut(&ut: &DateTime, &asc: &Time, lng: f64, dir: Direction) -> Time {
     let gst = gst_from_ut(&ut);
     let gst_0 = DateTime {
@@ -100,6 +142,49 @@ pub fn hour_angle_from_ut(&ut: &DateTime, &asc: &Time, lng: f64, dir: Direction)
 /// * `ha` - Hour-angle (H)
 /// * `lng` - Longitude
 /// * `dir` - Direction for Longitude
+///
+/// Example:
+/// ```rust
+/// use approx_eq::assert_approx_eq;
+/// use sowngwala::time::{
+///   Time,
+///   Month,
+///   DateTime
+/// };
+/// use sowngwala::coords::{
+///   Direction,
+///   right_ascension_from_ut
+/// };
+///
+/// let dir = Direction::West;
+/// let lng = 64.0;
+///
+/// // hour-angle
+/// let ha = Time {
+///     hour: 5,
+///     min: 51,
+///     sec: 44.0,
+/// };
+///
+/// let ut = DateTime {
+///     year: 1980,
+///     month: Month::Apr,
+///     day: 22.0,
+///     hour: 14,
+///     min: 36,
+///     sec: 51.67,
+/// };
+///
+/// let asc = right_ascension_from_ut(&ut, &ha, lng, dir);
+///
+/// assert_eq!(asc.hour, 18);
+/// assert_eq!(asc.min, 32);
+/// assert_approx_eq!(
+///     asc.sec, // 21.229576759189968
+///     21.0,
+///     1e-1
+/// );
+/// ```
 pub fn right_ascension_from_ut(&ut: &DateTime, &ha: &Time, lng: f64, dir: Direction) -> Time {
     let gst = gst_from_ut(&ut);
     let gst_0 = DateTime {
@@ -131,6 +216,53 @@ pub fn right_ascension_from_ut(&ut: &DateTime, &ha: &Time, lng: f64, dir: Direct
 /// * `coord.ha` - Hour-angle (H)
 /// * `coord.dec` - Declination (δ)
 /// * `lat` - Latitude (φ)
+///
+/// Example:
+/// ```rust
+/// use approx_eq::assert_approx_eq;
+/// use sowngwala::time::Time;
+/// use sowngwala::coords::{
+///   EquaCoord2,
+///   horizon_from_equatorial
+/// };
+///
+/// let lat = 52.0;
+///
+/// // hour-angle
+/// let ha = Time {
+///     hour: 5,
+///     min: 51,
+///     sec: 44.0,
+/// };
+///
+/// // declination
+/// let dec = Time {
+///     hour: 23,
+///     min: 13,
+///     sec: 10.0,
+/// };
+///
+/// let coord_0 = EquaCoord2 { ha, dec };
+/// let coord = horizon_from_equatorial(coord_0, lat);
+/// let alt = coord.alt;
+/// let azi = coord.azi;
+///
+/// assert_eq!(alt.hour, 19);
+/// assert_eq!(alt.min, 20);
+/// assert_approx_eq!(
+///     alt.sec, // 3.6428077696939454
+///     4.0,
+///     1e-0
+/// );
+///
+/// assert_eq!(azi.hour, 283);
+/// assert_eq!(azi.min, 16);
+/// assert_approx_eq!(
+///     azi.sec, // 15.698162189496543
+///     16.0,
+///     1e-0
+/// );
+/// ```
 pub fn horizon_from_equatorial(coord: EquaCoord2, lat: f64) -> HorizCoord {
     let hour_angle = (decimal_hours_from_time(&coord.ha) * 15.0).to_radians();
     let decline = decimal_hours_from_time(&coord.dec).to_radians();
@@ -166,6 +298,53 @@ pub fn horizon_from_equatorial(coord: EquaCoord2, lat: f64) -> HorizCoord {
 /// * `coord.alt` - Altitude (a)
 /// * `coord.azi` - Azimuth (A)
 /// * `lat` - Latitude (φ)
+///
+/// Example:
+/// ```rust
+/// use approx_eq::assert_approx_eq;
+/// use sowngwala::time::Time;
+/// use sowngwala::coords::{
+///   HorizCoord,
+///   equatorial_from_horizon
+/// };
+///
+/// let lat = 52.0;
+///
+/// // altitude
+/// let alt = Time {
+///     hour: 19,
+///     min: 20,
+///     sec: 4.0,
+/// };
+///
+/// // azimuth
+/// let azi = Time {
+///     hour: 283,
+///     min: 16,
+///     sec: 16.0,
+/// };
+///
+/// let coord_0 = HorizCoord { alt, azi };
+/// let coord = equatorial_from_horizon(coord_0, lat);
+/// let ha = coord.ha;
+/// let dec = coord.dec;
+///
+/// assert_eq!(ha.hour, 5);
+/// assert_eq!(ha.min, 51);
+/// assert_approx_eq!(
+///     ha.sec, // 43.998769832229954
+///     44.0,
+///     1e-0
+/// );
+///
+/// assert_eq!(dec.hour, 23);
+/// assert_eq!(dec.min, 13);
+/// assert_approx_eq!(
+///     dec.sec, // 10.456528456985552
+///     10.0,
+///     1e-1
+/// );
+/// ```
 pub fn equatorial_from_horizon(coord: HorizCoord, lat: f64) -> EquaCoord2 {
     let altitude = decimal_hours_from_time(&coord.alt).to_radians();
     let azimuth = decimal_hours_from_time(&coord.azi).to_radians();
@@ -199,6 +378,43 @@ pub fn equatorial_from_horizon(coord: HorizCoord, lat: f64) -> EquaCoord2 {
 /// (Peter Duffett-Smith, p.39)
 /// * `lst` - LST
 /// * `ha` - Hour-angle (H)
+///
+/// Example:
+/// ```rust
+/// use approx_eq::assert_approx_eq;
+/// use sowngwala::time::{
+///   Time,
+///   Month,
+///   DateTime
+/// };
+/// use sowngwala::coords::right_ascension_from_lst_and_hour_angle;
+///
+/// let lst = DateTime {
+///     year: 1980,
+///     month: Month::Apr,
+///     day: 22.0,
+///     hour: 0,
+///     min: 24,
+///     sec: 5.0,
+/// };
+///
+/// // hour-angle
+/// let ha = Time {
+///     hour: 5,
+///     min: 51,
+///     sec: 44.0,
+/// };
+///
+/// let asc = right_ascension_from_lst_and_hour_angle(&lst, &ha);
+///
+/// assert_eq!(asc.hour, 18);
+/// assert_eq!(asc.min, 32);
+/// assert_approx_eq!(
+///     asc.sec, // 20.99999999999966
+///     21.0,
+///     1e-0
+/// );
+/// ```
 pub fn right_ascension_from_lst_and_hour_angle(&lst: &DateTime, &ha: &Time) -> Time {
     let ha_decimal = decimal_hours_from_time(&ha);
     let time = Time {
@@ -223,6 +439,66 @@ pub fn right_ascension_from_lst_and_hour_angle(&lst: &DateTime, &ha: &Time) -> T
 /// * `coord.lat` - Latitude (β)
 /// * `coord.lng` - Longitude (λ)
 /// * `date` - Date for specific obliquity of the eplictic (ε)
+///
+/// Example:
+/// ```rust
+/// use approx_eq::assert_approx_eq;
+/// use sowngwala::time::{
+///   Time,
+///   Month,
+///   Date,
+///   decimal_hours_from_time
+/// };
+/// use sowngwala::coords::{
+///   EcliCoord,
+///   equatorial_from_ecliptic_with_date
+/// };
+///
+/// let lat_0 = Time {
+///     hour: 4,
+///     min: 52,
+///     sec: 31.0,
+/// };
+///
+/// let lng_0 = Time {
+///     hour: 139,
+///     min: 41,
+///     sec: 10.0,
+/// };
+///
+/// let coord_0 = EcliCoord {
+///     lat: decimal_hours_from_time(&lat_0),
+///     lng: decimal_hours_from_time(&lng_0),
+/// };
+///
+/// // To calculate a specific value
+/// // for mean obliquity of the ecliptic.
+/// let date = Date {
+///     year: 1980,
+///     month: Month::Apr,
+///     day: 22.0,
+/// };
+///
+/// let coord = equatorial_from_ecliptic_with_date(coord_0, &date);
+/// let asc = coord.asc;
+/// let dec = coord.dec;
+///
+/// assert_eq!(asc.hour, 9);
+/// assert_eq!(asc.min, 34);
+/// assert_approx_eq!(
+///     asc.sec, // 53.58216253599352
+///     53.6,
+///     1e-2
+/// );
+///
+/// assert_eq!(dec.hour, 19);
+/// assert_eq!(dec.min, 32);
+/// assert_approx_eq!(
+///     dec.sec, // 14.100993558899972
+///     14.2,
+///     1e-2
+/// );
+/// ```
 #[allow(clippy::many_single_char_names)]
 pub fn equatorial_from_ecliptic_with_date(coord: EcliCoord, &date: &Date) -> EquaCoord {
     let oblique = mean_obliquity_of_the_epliptic(&date).to_radians();
@@ -271,6 +547,63 @@ pub fn equatorial_from_ecliptic(coord: EcliCoord) -> EquaCoord {
 /// * `coord.asc` - Right ascension (α)
 /// * `coord.dec` - Declination (δ)
 /// * `date` - Date for specific obliquity of the eplictic (ε)
+///
+/// Example:
+/// ```rust
+/// use approx_eq::assert_approx_eq;
+/// use sowngwala::time::{
+///   Time,
+///   Month,
+///   Date,
+///   time_from_decimal_hours
+/// };
+/// use sowngwala::coords::{
+///   EquaCoord,
+///   ecliptic_from_equatorial_with_date
+/// };
+///
+/// // right-ascension
+/// let asc = Time {
+///     hour: 9,
+///     min: 34,
+///     sec: 53.6,
+/// };
+/// // declination
+/// let dec = Time {
+///     hour: 19,
+///     min: 32,
+///     sec: 14.2,
+/// };
+///
+/// // To calculate a specific value
+/// // for mean obliquity of the ecliptic.
+/// let date = Date {
+///     year: 1980,
+///     month: Month::Apr,
+///     day: 22.0,
+/// };
+///
+/// let coord_0 = EquaCoord { asc, dec };
+/// let coord = ecliptic_from_equatorial_with_date(coord_0, &date);
+/// let lat = time_from_decimal_hours(coord.lat);
+/// let lng = time_from_decimal_hours(coord.lng);
+///
+/// assert_eq!(lat.hour, 4);
+/// assert_eq!(lat.min, 52);
+/// assert_approx_eq!(
+///     lat.sec, // 31.17490012745307
+///     31.0,
+///     1e-2
+/// );
+///
+/// assert_eq!(lng.hour, 139);
+/// assert_eq!(lng.min, 41);
+/// assert_approx_eq!(
+///     lng.sec, // 10.207621429881328
+///     10.0,
+///     3e-2
+/// );
+/// ```
 #[allow(clippy::many_single_char_names)]
 pub fn ecliptic_from_equatorial_with_date(coord: EquaCoord, &date: &Date) -> EcliCoord {
     let oblique = mean_obliquity_of_the_epliptic(&date).to_radians();
@@ -305,6 +638,54 @@ pub fn ecliptic_from_equatorial_with_date(coord: EquaCoord, &date: &Date) -> Ecl
 /// * `coord` - Equatorial coordinate
 /// * `coord.asc` - Right ascension (α)
 /// * `coord.dec` - Declination (δ)
+///
+/// Example:
+/// ```rust
+/// use approx_eq::assert_approx_eq;
+/// use sowngwala::time::{
+///   Time,
+///   time_from_decimal_hours
+/// };
+/// use sowngwala::coords::{
+///   EquaCoord,
+///   galactic_from_equatorial
+/// };
+///
+/// // right-ascension
+/// let asc = Time {
+///     hour: 10,
+///     min: 21,
+///     sec: 0.0,
+/// };
+///
+/// // declination
+/// let dec = Time {
+///     hour: 10,
+///     min: 3,
+///     sec: 11.0,
+/// };
+///
+/// let coord_0 = EquaCoord { asc, dec };
+/// let coord = galactic_from_equatorial(coord_0);
+/// let lat = time_from_decimal_hours(coord.lat);
+/// let lng = time_from_decimal_hours(coord.lng);
+///
+/// assert_eq!(lat.hour, 51);
+/// assert_eq!(lat.min, 7);
+/// assert_approx_eq!(
+///     lat.sec, // 20.16407768754391
+///     20.0,
+///     1e-2
+/// );
+///
+/// assert_eq!(lng.hour, 232);
+/// assert_eq!(lng.min, 14);
+/// assert_approx_eq!(
+///     lng.sec, // 52.38055557683538
+///     52.0,
+///     1e-2
+/// );
+/// ```
 #[allow(clippy::many_single_char_names)]
 pub fn galactic_from_equatorial(coord: EquaCoord) -> GalacCoord {
     let mut asc_decimal = decimal_hours_from_time(&coord.asc).to_radians(); // right ascension (α)
@@ -341,6 +722,59 @@ pub fn galactic_from_equatorial(coord: EquaCoord) -> GalacCoord {
 /// * `coord` - Galactic coordinate
 /// * `coord.lat` - Galactic latitude (b)
 /// * `coord.lng` - Galactic longitude (l)
+///
+/// Example:
+/// ```rust
+/// use approx_eq::assert_approx_eq;
+/// use sowngwala::time::{
+///   Time,
+///   decimal_hours_from_time
+/// };
+/// use sowngwala::coords::{
+///   GalacCoord,
+///   equatorial_from_galactic
+/// };
+///
+/// // Galactic latitude (b)
+/// let lat = Time {
+///     hour: 51,
+///     min: 7,
+///     sec: 20.0,
+/// };
+///
+/// // Galactic latitude (l)
+/// let lng = Time {
+///     hour: 232,
+///     min: 14,
+///     sec: 52.0,
+/// };
+///
+/// let coord_0 = GalacCoord {
+///     lat: decimal_hours_from_time(&lat),
+///     lng: decimal_hours_from_time(&lng),
+/// };
+/// let coord = equatorial_from_galactic(coord_0);
+/// let asc = coord.asc;
+/// let dec = coord.dec;
+///
+/// assert_eq!(asc.hour, 10);
+/// // TODO:
+/// // The book tells it should be 21 for 'asc.min'...
+/// assert_eq!(asc.min, 20);
+/// assert_approx_eq!(
+///     asc.sec, // 59.98205693746215
+///     59.9,
+///     1e-2
+/// );
+///
+/// assert_eq!(dec.hour, 10);
+/// assert_eq!(dec.min, 3);
+/// assert_approx_eq!(
+///     dec.sec, // 11.117231829019829
+///     11.0,
+///     2e-2
+/// );
+/// ```
 #[allow(clippy::many_single_char_names)]
 pub fn equatorial_from_galactic(coord: GalacCoord) -> EquaCoord {
     let b = coord.lat.to_radians(); // // Galactic latitude (b)
@@ -383,6 +817,55 @@ pub fn equatorial_from_galactic(coord: GalacCoord) -> EquaCoord {
 /// * `coord_1` - Equatorial coordinate
 /// * `coord_1.asc` - Right ascension (α)
 /// * `coord_1.dec` - Declination (δ)
+///
+/// Example:
+/// ```rust
+/// use approx_eq::assert_approx_eq;
+/// use sowngwala::time::Time;
+/// use sowngwala::coords::{
+///   EquaCoord,
+///   angle_between_two_celestial_objects_for_equatorial
+/// };
+///
+/// // right-ascension (for Beta Orionis)
+/// let asc_0 = Time {
+///     hour: 5,
+///     min: 13,
+///     sec: 31.7,
+/// };
+///
+/// // declination (for Beta Orionis)
+/// let dec_0 = Time {
+///     hour: -8,
+///     min: 13,
+///     sec: 30.0,
+/// };
+///
+/// // right-ascension (for Canis Majoris)
+/// let asc_1 = Time {
+///     hour: 6,
+///     min: 44,
+///     sec: 13.4,
+/// };
+///
+/// // declination (for Canis Majoris)
+/// let dec_1 = Time {
+///     hour: -16,
+///     min: 41,
+///     sec: 11.0,
+/// };
+///
+/// let angle = angle_between_two_celestial_objects_for_equatorial(
+///     EquaCoord { asc: asc_0, dec: dec_0 },
+///     EquaCoord { asc: asc_1, dec: dec_1 }
+/// );
+///
+/// assert_approx_eq!(
+///     angle, // 23.67384942216419
+///     23.673_850,
+///     1e-6
+/// );
+/// ```
 #[allow(clippy::many_single_char_names)]
 pub fn angle_between_two_celestial_objects_for_equatorial(coord_0: EquaCoord, coord_1: EquaCoord) -> f64 {
     angle_between_two_celestial_objects(
@@ -423,398 +906,4 @@ pub fn angle_between_two_celestial_objects(asc_0: f64, dec_0: f64, asc_1: f64, d
             dec_0.cos() * dec_1.cos() * tmp.cos()
         );
     d_cos.acos().to_degrees()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use approx_eq::assert_approx_eq;
-
-    #[test]
-    fn hour_angle_from_ut_works() {
-        let dir = Direction::West;
-        let lng = 64.0;
-
-        let asc = Time {
-            hour: 18,
-            min: 32,
-            sec: 21.0,
-        };
-
-        let ut = DateTime {
-            year: 1980,
-            month: Month::Apr,
-            day: 22.0,
-            hour: 14,
-            min: 36,
-            sec: 51.67,
-        };
-
-        let hour_angle = hour_angle_from_ut(&ut, &asc, lng, dir);
-
-        assert_eq!(hour_angle.hour, 5);
-        assert_eq!(hour_angle.min, 51);
-        assert_approx_eq!(
-            hour_angle.sec, // 44.22957675918951
-            44.0,
-            1e-2
-        );
-    }
-
-    #[test]
-    fn right_ascension_from_ut_works() {
-        let dir = Direction::West;
-        let lng = 64.0;
-
-        // hour-angle
-        let ha = Time {
-            hour: 5,
-            min: 51,
-            sec: 44.0,
-        };
-
-        let ut = DateTime {
-            year: 1980,
-            month: Month::Apr,
-            day: 22.0,
-            hour: 14,
-            min: 36,
-            sec: 51.67,
-        };
-
-        let asc = right_ascension_from_ut(&ut, &ha, lng, dir);
-
-        assert_eq!(asc.hour, 18);
-        assert_eq!(asc.min, 32);
-        assert_approx_eq!(
-            asc.sec, // 21.229576759189968
-            21.0,
-            1e-1
-        );
-    }
-
-    #[test]
-    fn horizon_from_equatorial_works() {
-        let lat = 52.0;
-
-        // hour-angle
-        let ha = Time {
-            hour: 5,
-            min: 51,
-            sec: 44.0,
-        };
-
-        // declination
-        let dec = Time {
-            hour: 23,
-            min: 13,
-            sec: 10.0,
-        };
-
-        let coord_0 = EquaCoord2 { ha, dec };
-        let coord = horizon_from_equatorial(coord_0, lat);
-        let alt = coord.alt;
-        let azi = coord.azi;
-
-        assert_eq!(alt.hour, 19);
-        assert_eq!(alt.min, 20);
-        assert_approx_eq!(
-            alt.sec, // 3.6428077696939454
-            4.0,
-            1e-0
-        );
-
-        assert_eq!(azi.hour, 283);
-        assert_eq!(azi.min, 16);
-        assert_approx_eq!(
-            azi.sec, // 15.698162189496543
-            16.0,
-            1e-0
-        );
-    }
-
-    #[test]
-    fn equatorial_from_horizon_works() {
-        let lat = 52.0;
-
-        // altitude
-        let alt = Time {
-            hour: 19,
-            min: 20,
-            sec: 4.0,
-        };
-
-        // azimuth
-        let azi = Time {
-            hour: 283,
-            min: 16,
-            sec: 16.0,
-        };
-
-        let coord_0 = HorizCoord { alt, azi };
-        let coord = equatorial_from_horizon(coord_0, lat);
-        let ha = coord.ha;
-        let dec = coord.dec;
-
-        assert_eq!(ha.hour, 5);
-        assert_eq!(ha.min, 51);
-        assert_approx_eq!(
-            ha.sec, // 43.998769832229954
-            44.0,
-            1e-0
-        );
-
-        assert_eq!(dec.hour, 23);
-        assert_eq!(dec.min, 13);
-        assert_approx_eq!(
-            dec.sec, // 10.456528456985552
-            10.0,
-            1e-1
-        );
-    }
-
-    #[test]
-    fn right_ascension_from_lst_and_hour_angle_works() {
-        let lst = DateTime {
-            year: 1980,
-            month: Month::Apr,
-            day: 22.0,
-            hour: 0,
-            min: 24,
-            sec: 5.0,
-        };
-
-        // hour-angle
-        let ha = Time {
-            hour: 5,
-            min: 51,
-            sec: 44.0,
-        };
-
-        let asc = right_ascension_from_lst_and_hour_angle(&lst, &ha);
-
-        assert_eq!(asc.hour, 18);
-        assert_eq!(asc.min, 32);
-        assert_approx_eq!(
-            asc.sec, // 20.99999999999966
-            21.0,
-            1e-0
-        );
-    }
-
-    #[test]
-    fn equatorial_from_ecliptic_works() {
-        let lat_0 = Time {
-            hour: 4,
-            min: 52,
-            sec: 31.0,
-        };
-
-        let lng_0 = Time {
-            hour: 139,
-            min: 41,
-            sec: 10.0,
-        };
-
-        let coord_0 = EcliCoord {
-            lat: decimal_hours_from_time(&lat_0),
-            lng: decimal_hours_from_time(&lng_0),
-        };
-
-        // To calculate a specific value
-        // for mean obliquity of the ecliptic.
-        let date = Date {
-            year: 1980,
-            month: Month::Apr,
-            day: 22.0,
-        };
-
-        let coord = equatorial_from_ecliptic_with_date(coord_0, &date);
-        let asc = coord.asc;
-        let dec = coord.dec;
-
-        assert_eq!(asc.hour, 9);
-        assert_eq!(asc.min, 34);
-        assert_approx_eq!(
-            asc.sec, // 53.58216253599352
-            53.6,
-            1e-2
-        );
-
-        assert_eq!(dec.hour, 19);
-        assert_eq!(dec.min, 32);
-        assert_approx_eq!(
-            dec.sec, // 14.100993558899972
-            14.2,
-            1e-2
-        );
-    }
-
-    #[test]
-    fn ecliptic_from_equatorial_works() {
-        // right-ascension
-        let asc = Time {
-            hour: 9,
-            min: 34,
-            sec: 53.6,
-        };
-        // declination
-        let dec = Time {
-            hour: 19,
-            min: 32,
-            sec: 14.2,
-        };
-
-        // To calculate a specific value
-        // for mean obliquity of the ecliptic.
-        let date = Date {
-            year: 1980,
-            month: Month::Apr,
-            day: 22.0,
-        };
-
-        let coord_0 = EquaCoord { asc, dec };
-        let coord = ecliptic_from_equatorial_with_date(coord_0, &date);
-        let lat = time_from_decimal_hours(coord.lat);
-        let lng = time_from_decimal_hours(coord.lng);
-
-        assert_eq!(lat.hour, 4);
-        assert_eq!(lat.min, 52);
-        assert_approx_eq!(
-            lat.sec, // 31.17490012745307
-            31.0,
-            1e-2
-        );
-
-        assert_eq!(lng.hour, 139);
-        assert_eq!(lng.min, 41);
-        assert_approx_eq!(
-            lng.sec, // 10.207621429881328
-            10.0,
-            3e-2
-        );
-    }
-
-    #[test]
-    fn galactic_from_equatorial_works() {
-        // right-ascension
-        let asc = Time {
-            hour: 10,
-            min: 21,
-            sec: 0.0,
-        };
-
-        // declination
-        let dec = Time {
-            hour: 10,
-            min: 3,
-            sec: 11.0,
-        };
-
-        let coord_0 = EquaCoord { asc, dec };
-        let coord = galactic_from_equatorial(coord_0);
-        let lat = time_from_decimal_hours(coord.lat);
-        let lng = time_from_decimal_hours(coord.lng);
-
-        assert_eq!(lat.hour, 51);
-        assert_eq!(lat.min, 7);
-        assert_approx_eq!(
-            lat.sec, // 20.16407768754391
-            20.0,
-            1e-2
-        );
-
-        assert_eq!(lng.hour, 232);
-        assert_eq!(lng.min, 14);
-        assert_approx_eq!(
-            lng.sec, // 52.38055557683538
-            52.0,
-            1e-2
-        );
-    }
-
-    #[test]
-    fn equatorial_from_galactic_works() {
-        // Galactic latitude (b)
-        let lat = Time {
-            hour: 51,
-            min: 7,
-            sec: 20.0,
-        };
-
-        // Galactic latitude (l)
-        let lng = Time {
-            hour: 232,
-            min: 14,
-            sec: 52.0,
-        };
-
-        let coord_0 = GalacCoord {
-            lat: decimal_hours_from_time(&lat),
-            lng: decimal_hours_from_time(&lng),
-        };
-        let coord = equatorial_from_galactic(coord_0);
-        let asc = coord.asc;
-        let dec = coord.dec;
-
-        assert_eq!(asc.hour, 10);
-        // TODO:
-        // The book tells it should be 21 for 'asc.min'...
-        assert_eq!(asc.min, 20);
-        assert_approx_eq!(
-            asc.sec, // 59.98205693746215
-            59.9,
-            1e-2
-        );
-
-        assert_eq!(dec.hour, 10);
-        assert_eq!(dec.min, 3);
-        assert_approx_eq!(
-            dec.sec, // 11.117231829019829
-            11.0,
-            2e-2
-        );
-    }
-
-    #[test]
-    fn angle_between_two_celestial_objects_works() {
-        // right-ascension (for Beta Orionis)
-        let asc_0 = Time {
-            hour: 5,
-            min: 13,
-            sec: 31.7,
-        };
-
-        // declination (for Beta Orionis)
-        let dec_0 = Time {
-            hour: -8,
-            min: 13,
-            sec: 30.0,
-        };
-
-        // right-ascension (for Canis Majoris)
-        let asc_1 = Time {
-            hour: 6,
-            min: 44,
-            sec: 13.4,
-        };
-
-        // declination (for Canis Majoris)
-        let dec_1 = Time {
-            hour: -16,
-            min: 41,
-            sec: 11.0,
-        };
-
-        let angle = angle_between_two_celestial_objects_for_equatorial(
-            EquaCoord { asc: asc_0, dec: dec_0 },
-            EquaCoord { asc: asc_1, dec: dec_1 }
-        );
-
-        assert_approx_eq!(
-            angle, // 23.67384942216419
-            23.673_850,
-            1e-6
-        );
-    }
 }

@@ -1,7 +1,5 @@
 #[cfg(test)]
 extern crate approx_eq;
-#[cfg(test)]
-use crate::time::Month;
 
 use crate::constants::{
     ECCENTRICITY_OF_ORBIT,
@@ -44,6 +42,20 @@ fn _kepler_aux(mean_anom: f64, ecc: f64, counter: u32) -> f64 {
 /// Takes mean anomaly, and returns the eccentric anomaly.
 /// (Peter Duffett-Smith, p.90)
 /// * `mean_anom` - Mean anomaly (M) (in radians)
+///
+/// Example:
+/// ```rust
+/// use approx_eq::assert_approx_eq;
+/// use sowngwala::sun::find_kepler;
+///
+/// let mean_anom = 3.527_781;
+/// let ecc_anom = find_kepler(mean_anom);
+/// assert_approx_eq!(
+///     ecc_anom, // 3.521581853477305
+///     3.521_581,
+///     1e-6
+/// );
+/// ```
 pub fn find_kepler(mean_anom: f64) -> f64 {
     _kepler_aux(mean_anom, mean_anom, 0_u32)
 }
@@ -101,6 +113,38 @@ pub fn ecliptic_position_of_the_sun_from_date(&date: &Date) -> EcliCoord {
 /// ECLIPTIC_LONGITUDE_OF_PERIGEE --> Omega bar G (ω bar g)
 /// (Peter Duffett-Smith, p.91)
 /// * `date` - Date
+///
+/// Example:
+/// ```rust
+/// use approx_eq::assert_approx_eq;
+/// use sowngwala::time::{Month, Date};
+/// use sowngwala::sun::equatorial_position_of_the_sun_from_date;
+///
+/// let date = Date {
+///     year: 1988,
+///     month: Month::Jul,
+///     day: 27.0,
+/// };
+/// let coord = equatorial_position_of_the_sun_from_date(&date);
+/// let asc = coord.asc;
+/// let dec = coord.dec;
+///
+/// assert_eq!(asc.hour, 8);
+/// assert_eq!(asc.min, 26);
+/// assert_approx_eq!(
+///     asc.sec, // 3.8050320752654443
+///     4.0,
+///     1e-1
+/// );
+///
+/// assert_eq!(dec.hour, 19);
+/// assert_eq!(dec.min, 12);
+/// assert_approx_eq!(
+///     dec.sec, // 42.522657925921976
+///     42.0,
+///     5e-2
+/// );
+/// ```
 pub fn equatorial_position_of_the_sun_from_date(&date: &Date) -> EquaCoord {
     equatorial_from_ecliptic_with_date(
         ecliptic_position_of_the_sun_from_date(&date),
@@ -126,6 +170,42 @@ pub fn equation_of_time_from_gst(&gst: &DateTime) -> Time {
     time_from_decimal_hours(e)
 }
 
+///
+/// Example:
+/// ```rust
+/// use approx_eq::assert_approx_eq;
+/// use sowngwala::time::{
+///   Month,
+///   DateTime,
+///   decimal_hours_from_time
+/// };
+/// use sowngwala::sun::{
+///   equation_of_time_from_gst,
+///   equation_of_time_from_ut
+/// };
+///
+/// let gst = DateTime {
+///     year: 1980,
+///     month: Month::Jul,
+///     day: 27.5,
+///     hour: 0,
+///     min: 0,
+///     sec: 0.0,
+/// };
+///
+/// let eot = equation_of_time_from_gst(&gst);
+/// let decimal = decimal_hours_from_time(&eot);
+///
+/// // dec:
+/// //   Time { hour: 0, min: -2, sec: 33.3100561387684 }
+/// // where expected:
+/// //   Time { hour: 0, min: -6, sec: 25.0 }
+/// assert_approx_eq!(
+///     decimal, // -0.042586126705213445
+///     -0.10694444444444445,
+///     2.0
+/// );
+/// ```
 #[allow(clippy::many_single_char_names)]
 pub fn equation_of_time_from_ut(&ut: &DateTime) -> Time {
     equation_of_time_from_gst(
@@ -134,74 +214,4 @@ pub fn equation_of_time_from_ut(&ut: &DateTime) -> Time {
             &gst_from_ut(&ut)
         )
     )
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use approx_eq::assert_approx_eq;
-
-    #[test]
-    fn find_kepler_works() {
-        let mean_anom = 3.527_781;
-        let ecc_anom = find_kepler(mean_anom);
-        assert_approx_eq!(
-            ecc_anom, // 3.521581853477305
-            3.521_581,
-            1e-6
-        );
-    }
-
-    #[test]
-    fn equatorial_position_of_the_sun_from_date_works() {
-        let date = Date {
-            year: 1988,
-            month: Month::Jul,
-            day: 27.0,
-        };
-        let coord = equatorial_position_of_the_sun_from_date(&date);
-        let asc = coord.asc;
-        let dec = coord.dec;
-
-        assert_eq!(asc.hour, 8);
-        assert_eq!(asc.min, 26);
-        assert_approx_eq!(
-            asc.sec, // 3.8050320752654443
-            4.0,
-            1e-1
-        );
-
-        assert_eq!(dec.hour, 19);
-        assert_eq!(dec.min, 12);
-        assert_approx_eq!(
-            dec.sec, // 42.522657925921976
-            42.0,
-            5e-2
-        );
-    }
-
-    #[test]
-    fn equation_of_time_from_gst_works() {
-        let gst = DateTime {
-            year: 1980,
-            month: Month::Jul,
-            day: 27.5,
-            hour: 0,
-            min: 0,
-            sec: 0.0,
-        };
-
-        let eot = equation_of_time_from_gst(&gst);
-        let decimal = decimal_hours_from_time(&eot);
-
-        // dec:
-        //   Time { hour: 0, min: -2, sec: 33.3100561387684 }
-        // where expected:
-        //   Time { hour: 0, min: -6, sec: 25.0 }
-        assert_approx_eq!(
-            decimal, // -0.042586126705213445
-            -0.10694444444444445,
-            2.0
-        );
-    }
 }

@@ -1,7 +1,5 @@
 #[cfg(test)]
 extern crate approx_eq;
-#[cfg(test)]
-use crate::time::Month;
 
 use crate::constants::{
     MOON_MEAN_LONGITUDE_AT_THE_EPOCH,
@@ -29,6 +27,45 @@ use crate::sun::sun_longitude_and_mean_anomaly;
 /// and declination (δ) of equatorial coordinate.
 /// (Peter Duffett-Smith, p.144)
 /// * `dt` - DateTime
+///
+/// Example:
+/// ```rust
+/// use approx_eq::assert_approx_eq;
+/// use sowngwala::time::{DateTime, Month};
+/// use sowngwala::moon::equatorial_position_of_the_moon_from_datetime;
+///
+/// let dt = DateTime {
+///     year: 1979,
+///     month: Month::Feb,
+///     day: 26.0,
+///     hour: 16,
+///     min: 0,
+///     sec: 0.0,
+/// };
+///
+/// let coord = equatorial_position_of_the_moon_from_datetime(&dt);
+/// let asc = coord.asc;
+/// let dec = coord.dec;
+
+/// assert_eq!(asc.hour, 22);
+/// assert_eq!(asc.min, 33);
+/// assert_approx_eq!(
+///     asc.sec, // 26.382007503326292
+///     29.0,
+///     1e-1
+/// );
+///
+/// // dec:
+/// //   Time { hour: -8, min: 1, sec: 1.8454925599195349 }
+/// // where expected:
+/// //   Time { hour: -8, min: 2, sec: 42.0 }
+/// assert_eq!(dec.hour, -8);
+/// assert_approx_eq!(
+///     dec.min as f64, // 1.0
+///     2.0,
+///     2.0
+/// );
+/// ```
 #[allow(clippy::many_single_char_names)]
 pub fn equatorial_position_of_the_moon_from_datetime(&dt: &DateTime) -> EquaCoord {
     let date = Date::from(&dt);
@@ -111,45 +148,4 @@ pub fn equatorial_position_of_the_moon_from_datetime(&dt: &DateTime) -> EquaCoor
         EcliCoord { lat, lng },
         &date
     )
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use approx_eq::assert_approx_eq;
-
-    #[test]
-    fn equatorial_position_of_the_moon_from_datetime_works() {
-        let dt = DateTime {
-            year: 1979,
-            month: Month::Feb,
-            day: 26.0,
-            hour: 16,
-            min: 0,
-            sec: 0.0,
-        };
-
-        let coord = equatorial_position_of_the_moon_from_datetime(&dt);
-        let asc = coord.asc;
-        let dec = coord.dec;
-
-        assert_eq!(asc.hour, 22);
-        assert_eq!(asc.min, 33);
-        assert_approx_eq!(
-            asc.sec, // 26.382007503326292
-            29.0,
-            1e-1
-        );
-
-        // dec:
-        //   Time { hour: -8, min: 1, sec: 1.8454925599195349 }
-        // where expected:
-        //   Time { hour: -8, min: 2, sec: 42.0 }
-        assert_eq!(dec.hour, -8);
-        assert_approx_eq!(
-            dec.min as f64, // 1.0
-            2.0,
-            2.0
-        );
-    }
 }

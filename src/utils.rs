@@ -5,57 +5,87 @@ use crate::time::Month;
 
 use crate::time::{ Date, julian_day };
 
-pub fn reduce_to(given: f64, target: f64) -> (f64, f64) {
-    let mut factor: f64 = ((target - given) / target).abs();
+/// Example
+/// ```rust
+/// use approx_eq::assert_approx_eq;
+/// use sowngwala::utils::carry_over;
+///
+/// let (res, up) = carry_over(59.0, 60.0);
+/// assert_eq!(res, 59.0);
+/// assert_eq!(up, 0.0);
+///
+/// let (res, up) = carry_over(60.0, 60.0);
+/// assert_eq!(res, 0.0);
+/// assert_eq!(up, 1.0);
+///
+/// let (res, up) = carry_over(120.0, 60.0);
+/// assert_eq!(res, 0.0);
+/// assert_eq!(up, 2.0);
+///
+/// let (res, up) = carry_over(121.0, 60.0);
+/// assert_eq!(res, 1.0);
+/// assert_eq!(up, 2.0);
+///
+/// let (res, up) = carry_over(120.1, 60.0);
+/// assert_approx_eq!(res, 0.1, 1e-1);
+/// assert_eq!(up, 2.0);
+///
+/// let (res, up) = carry_over(-60.0, 60.0);
+/// assert_eq!(res, 0.0);
+/// assert_eq!(up, -1.0);
+///
+/// let (res, up) = carry_over(-120.0, 60.0);
+/// assert_eq!(res, 0.0);
+/// assert_eq!(up, -2.0);
+///
+/// let (res, up) = carry_over(-59.0, 60.0);
+/// assert_eq!(res, 1.0);
+/// assert_eq!(up, -1.0);
+///
+/// let (res, up) = carry_over(-61.0, 60.0);
+/// assert_eq!(res, 59.0);
+/// assert_eq!(up, -2.0);
+/// 
+/// let (res, up) = carry_over(-60.1, 60.0);
+/// assert_approx_eq!(res, 59.9, 1e-1);
+/// assert_eq!(up, -2.0);
+/// ```
+pub fn carry_over(value: f64, target: f64) -> (f64, f64) {
+    let mut quotient = value.abs() / target;
 
-    factor = if factor < 1.0 {
-        if given < target {
-            0.0
-        } else {
-            factor.ceil()
-        }
+    quotient = if value < 0.0 {
+        quotient.ceil()
     } else {
-        factor.floor()
+        quotient.floor()
     };
 
-    let largest = target * factor;
+    let largest = target * quotient;
 
-    let value = if given < 0.0 {
-        given + largest
+    let result = if value < 0.0 {
+        value + largest
     } else {
-        given - largest
+        value - largest
     };
 
-    factor = if given < 0.0 {
-        - factor
-    } else {
-        factor
-    };
-
-    (value, factor)
-}
-
-#[allow(clippy::float_cmp)]
-pub fn reduce_to_exclusive(given: f64, target: f64) -> (f64, f64) {
-    let (mut value, mut factor) = reduce_to(given, target);
-
-    // TODO: float_cmp
-    if value == target {
-        value = 0.0;
-        factor += 1.0;
+    if value < 0.0 && quotient != 0.0 {
+        quotient = -quotient;
     }
-    (value, factor)
+
+    (result, quotient)
 }
 
 pub fn normalize_angle(value: f64, max: f64) -> f64 {
     let half = max / 2.0;
     let mut angle = value;
+
     while angle <= -half {
         angle += max;
     }
+
     while angle > half {
         angle -= max;
     }
+
     angle
 }
 
@@ -77,16 +107,6 @@ pub fn mean_obliquity_of_the_epliptic(&date: &Date) -> f64 {
 mod tests {
     use super::*;
     use approx_eq::assert_approx_eq;
-
-    #[test]
-    fn reduce_to_works() {
-        let (value, _factor) = reduce_to(-465.986_246, 24.0);
-        assert_approx_eq!(
-            value,
-            14.013_754,
-            1e-3
-        );
-    }
 
     #[test]
     fn mean_obliquity_of_the_epliptic_works() {
