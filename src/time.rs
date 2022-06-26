@@ -163,6 +163,93 @@ impl DateTime {
     }
 }
 
+/// We define the decimal year "y" as follows:
+///
+///   y = year + (month - 0.5) / 12
+///
+/// This gives "y" for the middle of the month, which is accurate enough
+/// given the precision in the known values of ΔT. The following
+/// polynomial expressions can be used calculate the value of ΔT
+/// (in seconds) over the time period covered by of the Five Millennium
+/// Canon of Solar Eclipses: -1999 to +3000.
+pub fn decimal_year_from_date(&date: &Date) -> f64 {
+    (date.year as f64) + ((date.month as i16) as f64 - 0.5) / 12.0
+}
+
+/// Converts Time into decimal hours.
+/// (Peter Duffett-Smith, p.10)
+///
+/// Example:
+/// ```rust
+/// use approx_eq::assert_approx_eq;
+/// use sowngwala::time::{Time, decimal_hours_from_time};
+///
+/// let time = Time {
+///     hour: 18,
+///     min: 31,
+///     sec: 27.0,
+/// };
+/// assert_approx_eq!(
+///     decimal_hours_from_time(&time), // 18.524166666666666
+///     18.52417,
+///     1e-6
+/// );
+/// ```
+pub fn decimal_hours_from_time(&time: &Time) -> f64 {
+    let hour = (time.hour as f64).abs();
+    let min = (time.min as f64).abs();
+    let sec = time.sec.abs();
+    let dec = hour + ((min + (sec / 60.0)) / 60.0);
+
+    if time.hour < 0 || time.min < 0 || time.sec < 0.0 {
+        - dec
+    } else {
+        dec
+    }
+}
+
+/// Convert decimal hours into Time.
+/// (Peter Duffett-Smith, p.11)
+///
+/// Example:
+/// ```rust
+/// use approx_eq::assert_approx_eq;
+/// use sowngwala::time::time_from_decimal_hours;
+///
+/// let time = time_from_decimal_hours(18.52417);
+/// assert_eq!(time.hour, 18);
+/// assert_eq!(time.min, 31);
+/// assert_approx_eq!(
+///     time.sec, // 27.012000000005685
+///     27.0,
+///     1e-3
+/// );
+/// ```
+#[allow(clippy::many_single_char_names)]
+pub fn time_from_decimal_hours(dec: f64) -> Time {
+    let sign: i16 = if dec < 0.0 {
+        -1
+    } else {
+        1
+    };
+    let dec2 = dec.abs();
+    let lower = dec2.fract() * 60.0;
+
+    let mut hour = dec2.floor() as i16;
+    let mut min = lower.floor() as i16;
+    let mut sec: f64 = lower.abs().fract() * 60.0;
+
+    if hour != 0 {
+        hour *= sign;
+    } else if min != 0 {
+        min *= sign;
+    } else {
+        sec *= sign as f64;
+    }
+
+    Time { hour, min, sec }
+}
+
 /// Checks whether the given Date is julian day.
 pub fn is_julian_date(date: &Date) -> bool {
     if date.year > 1582 {
@@ -344,6 +431,24 @@ pub fn julian_day(&date: &Date) -> f64 {
 
     let d = (30.6001 * (m + 1.0)).floor();
 
+    // println!("++++ julian_day()");
+    // println!("date: {:?}", date);
+    // println!("y: {:?}", y);
+    // println!("m: {:?}", m);
+    // println!("b: {:?}", b);
+    // println!("c: {:?}", c);
+    // println!("d: {:?}", d);
+    // println!("date.day: {:?}", date.day);
+
+// ++++ julian_day()
+// date: Date { year: 1985, month: Feb, day: 17.25 }
+// y: 1984.0
+// m: 14.0
+// b: -13.0
+// c: 724656.0
+// d: 459.0
+// date.day: 17.25
+
     b + c + d + date.day + 1_720_994.5
 }
 
@@ -426,6 +531,48 @@ pub fn date_from_julian_day(mut jd: f64) -> Date {
     }
 }
 
+/// Example:
+/// ```rust
+/// use sowngwala::time::time_from_decimal_days;
+///
+/// let (day, time) = time_from_decimal_days(17.25);
+///
+/// assert_eq!(day, 17);
+/// assert_eq!(time.hour, 6);
+/// ```
+pub fn time_from_decimal_days(days: f64) -> (u32, Time) {
+    let day = days.floor() as u32;
+    let dec: f64 = days.fract() * 24.0;
+    let time: Time = time_from_decimal_hours(dec);
+    (day, time)
+}
+
+/// Example:
+/// ```rust
+/// use sowngwala::time::{Month, datetime_from_julian_day};
+///
+/// let dt = datetime_from_julian_day(2_446_113.75);
+///
+/// assert_eq!(dt.year, 1985);
+/// assert_eq!(dt.month, Month::Feb);
+/// assert_eq!(dt.day, 17.0);
+/// assert_eq!(dt.hour, 6);
+/// ```
+#[allow(clippy::many_single_char_names)]
+pub fn datetime_from_julian_day(jd: f64) -> DateTime {
+    let date: Date = date_from_julian_day(jd);
+    let (day, time) = time_from_decimal_days(date.day);
+
+    DateTime::new(
+        &Date {
+            year: date.year,
+            month: date.month,
+            day: day as f64,
+        },
+        &time,
+    )
+}
+
 pub fn j2000_from_julian_day(jd: f64) -> f64 {
     jd - J2000
 }
@@ -444,19 +591,6 @@ pub fn modified_julian_day_from_ut(&ut: &DateTime) -> f64 {
     modified_julian_day_from_julian_day(
         julian_day_from_ut(&ut)
     )
-}
-
-/// We define the decimal year "y" as follows:
-///
-///   y = year + (month - 0.5) / 12
-///
-/// This gives "y" for the middle of the month, which is accurate enough
-/// given the precision in the known values of ΔT. The following
-/// polynomial expressions can be used calculate the value of ΔT
-/// (in seconds) over the time period covered by of the Five Millennium
-/// Canon of Solar Eclipses: -1999 to +3000.
-pub fn decimal_year_from_date(&date: &Date) -> f64 {
-    (date.year as f64) + ((date.month as i16) as f64 - 0.5) / 12.0
 }
 
 /// Finds day of the week out of Date.
@@ -485,83 +619,86 @@ pub fn day_of_the_week(&date: &Date) -> Weekday {
     Weekday::try_from((a.abs().fract() * 7.0).round() as i32).unwrap()
 }
 
-/// Converts Time into decimal hours.
-/// (Peter Duffett-Smith, p.10)
-///
-/// Example:
-/// ```rust
-/// use approx_eq::assert_approx_eq;
-/// use sowngwala::time::{Time, decimal_hours_from_time};
-///
-/// let time = Time {
-///     hour: 18,
-///     min: 31,
-///     sec: 27.0,
-/// };
-/// assert_approx_eq!(
-///     decimal_hours_from_time(&time), // 18.524166666666666
-///     18.52417,
-///     1e-6
-/// );
-/// ```
-pub fn decimal_hours_from_time(&time: &Time) -> f64 {
-    let hour = (time.hour as f64).abs();
-    let min = (time.min as f64).abs();
-    let sec = time.sec.abs();
-    let dhours = hour + ((min + (sec / 60.0)) / 60.0);
-    if time.hour < 0 || time.min < 0 || time.sec < 0.0 {
-        - dhours
-    } else {
-        dhours
-    }
-}
-
-/// Convert decimal hours into Time.
-/// (Peter Duffett-Smith, p.11)
-///
-/// Example:
-/// ```rust
-/// use approx_eq::assert_approx_eq;
-/// use sowngwala::time::time_from_decimal_hours;
-///
-/// let time = time_from_decimal_hours(18.52417);
-/// assert_eq!(time.hour, 18);
-/// assert_eq!(time.min, 31);
-/// assert_approx_eq!(
-///     time.sec, // 27.012000000005685
-///     27.0,
-///     1e-3
-/// );
-/// ```
-#[allow(clippy::many_single_char_names)]
-pub fn time_from_decimal_hours(dec: f64) -> Time {
-    let sign: i16 = if dec < 0.0 {
-        -1
-    } else {
-        1
-    };
-    let dec2 = dec.abs();
-    let lower = dec2.fract() * 60.0;
-
-    let mut hour = dec2.floor() as i16;
-    let mut min = lower.floor() as i16;
-    let mut sec: f64 = lower.abs().fract() * 60.0;
-
-    if hour != 0 {
-        hour *= sign;
-    } else if min != 0 {
-        min *= sign;
-    } else {
-        sec *= sign as f64;
-    }
-
-    Time { hour, min, sec }
-}
-
 pub fn add_date(&date: &Date, adjust: f64) -> Date {
     date_from_julian_day(
         julian_day(&date) + adjust
     )
+}
+
+/// Example:
+/// ```rust
+/// use sowngwala::time::{
+///   DateTime,
+///   Month,
+///   add_datetime,
+/// };
+///
+/// let date = add_datetime(
+///   &DateTime {
+///     year: 1985,
+///     month: Month::Feb,
+///     day: 17.0,
+///     hour: 6,
+///     min: 0,
+///     sec: 0.0,
+///   },
+///   1.0
+/// );
+/// assert_eq!(date.day, 18.0);
+pub fn add_datetime(&dt: &DateTime, adjust: f64) -> DateTime {
+    datetime_from_julian_day(
+        julian_day_from_ut(&dt) + adjust
+    )
+}
+
+pub fn normalize_time(&t: &Time) -> (Time, f64) {
+    let (sec, min_excess): (f64, f64) = carry_over(t.sec, 60.0);
+
+    let min: f64 = (t.min as f64) + min_excess;
+    let (min, hour_excess): (f64, f64) = carry_over(min, 60.0);
+
+    let hour: f64 = (t.hour as f64) + hour_excess;
+    let (hour, day_excess): (f64, f64) = carry_over(hour, 24.0);
+
+    let time = Time {
+        hour: hour as i16,
+        min: min as i16,
+        sec,
+    };
+
+    (time, day_excess)
+}
+
+/// Example:
+/// ```rust
+/// use sowngwala::time::{
+///   Month,
+///   DateTime,
+///   normalize_datetime
+/// };
+///
+/// let dt_0 = DateTime {
+///     year: 2021,
+///     month: Month::Jan,
+///     day: 31.0,
+///     hour: 23,
+///     min: 61,
+///     sec: -2.0,
+/// };
+/// let dt: DateTime = normalize_datetime(&dt_0);
+///
+/// assert_eq!(dt.year, 2021);
+/// assert_eq!(dt.month, Month::Feb);
+/// assert_eq!(dt.day, 1.0);
+/// assert_eq!(dt.hour, 0);
+/// assert_eq!(dt.min, 0);
+/// assert_eq!(dt.sec, 58.0);
+/// ```
+#[allow(clippy::many_single_char_names)]
+pub fn normalize_datetime(&dt: &DateTime) -> DateTime {
+    let (t, day_excess): (Time, f64) = normalize_time(&Time::from(&dt));
+    let d = add_date(&Date::from(&dt), day_excess);
+    DateTime::new(&d, &t)
 }
 
 fn _ut_aux(&dt: &DateTime, zone: i8) -> DateTime {
@@ -661,56 +798,6 @@ pub fn local_from_ut(&dt: &DateTime, zone: i8) -> DateTime {
     _ut_aux(&dt, zone)
 }
 
-pub fn normalize_time(&t: &Time) -> (Time, f64) {
-    let (sec, min_excess): (f64, f64) = carry_over(t.sec, 60.0);
-
-    let min: f64 = (t.min as f64) + min_excess;
-    let (min, hour_excess): (f64, f64) = carry_over(min, 60.0);
-
-    let hour: f64 = (t.hour as f64) + hour_excess;
-    let (hour, day_excess): (f64, f64) = carry_over(hour, 24.0);
-
-    let time = Time {
-        hour: hour as i16,
-        min: min as i16,
-        sec,
-    };
-
-    (time, day_excess)
-}
-
-/// Example:
-/// ```rust
-/// use sowngwala::time::{
-///   Month,
-///   DateTime,
-///   normalize_datetime
-/// };
-///
-/// let dt_0 = DateTime {
-///     year: 2021,
-///     month: Month::Jan,
-///     day: 31.0,
-///     hour: 23,
-///     min: 61,
-///     sec: -2.0,
-/// };
-/// let dt: DateTime = normalize_datetime(&dt_0);
-///
-/// assert_eq!(dt.year, 2021);
-/// assert_eq!(dt.month, Month::Feb);
-/// assert_eq!(dt.day, 1.0);
-/// assert_eq!(dt.hour, 0);
-/// assert_eq!(dt.min, 0);
-/// assert_eq!(dt.sec, 58.0);
-/// ```
-#[allow(clippy::many_single_char_names)]
-pub fn normalize_datetime(&dt: &DateTime) -> DateTime {
-    let (t, day_excess): (Time, f64) = normalize_time(&Time::from(&dt));
-    let d = add_date(&Date::from(&dt), day_excess);
-    DateTime::new(&d, &t)
-}
-
 pub fn eot_decimal_from_ut(&ut: &DateTime) -> f64 {
     decimal_hours_from_time(
         &equation_of_time_from_ut(&ut)
@@ -779,7 +866,11 @@ pub fn eot_fortified_ut_from_local(&dt: &DateTime, zone: i8) -> DateTime {
 ///     min: 36,
 ///     sec: 51.67,
 /// };
+///
 /// let gst = gst_from_ut(&ut);
+///
+/// println!("gst: {:?}", gst);
+///
 /// assert_eq!(gst.hour, 4);
 /// assert_eq!(gst.min, 40);
 /// assert_approx_eq!(
@@ -790,17 +881,63 @@ pub fn eot_fortified_ut_from_local(&dt: &DateTime, zone: i8) -> DateTime {
 /// ```
 #[allow(clippy::many_single_char_names)]
 pub fn gst_from_ut(&ut: &DateTime) -> Time {
+    // println!("++++ gst_from_ut()");
+    // println!("ut: {:?}", ut);
+
     let jd = julian_day(&Date::from(&ut));
+    // println!("(gst_from_ut)");
+    // println!("jd[0]: {:?}", jd);
+
     let s = jd - 2_451_545.0;
     let t = s / 36_525.0;
     let t0 = 6.697_374_558 + (2_400.051_336 * t) + (0.000_025_862 * t * t);
+    // println!("jd[1]: {:?}", jd);
+    // println!("s: {:?}", s);
+    // println!("t: {:?}", t);
+    // println!("t0[0]: {:?}", t0);
+
     let (t0, _factor) = carry_over(t0, 24.0);
+    // println!("t0[1]: {:?}", t0);
 
     let mut decimal = decimal_hours_from_time(&Time::from(&ut));
+    // println!("(gst_from_ut)");
+
+    // println!("decimal[0]: {:?}", decimal);
     decimal *= 1.002_737_909;
+    // println!("decimal[1]: {:?}", decimal);
     decimal += t0;
+    // println!("decimal[2]: {:?}", decimal);
 
     let (decimal, _factor): (f64, f64) = carry_over(decimal, 24.0);
+    // println!("decimal[3]: {:?}", decimal);
+
+// ++++ gst_from_ut()
+// ut: DateTime { year: 1980, month: Apr, day: 22.0, hour: 14, min: 36, sec: 51.67 }
+// ++++ julian_day()
+// y: 1980.0
+// m: 4.0
+// b: -13.0
+// c: 723195.0
+// d: 153.0
+// date.day: 22.0
+// (gst_from_ut)
+// jd[0]: 2444351.5
+// jd[1]: 2444351.5
+// s: -7193.5
+// t: -0.1969472963723477
+// t0[0]: -465.9862462188997
+// t0[1]: 14.01375378110032
+// ++++ decimal_hours_from_time()
+// hour: 14.0
+// min: 36.0
+// sec: 51.67
+// dhours: 14.614352777777778
+// (gst_from_ut)
+// decimal[0]: 14.614352777777778
+// decimal[1]: 14.65436554577723
+// decimal[2]: 28.66811932687755
+// decimal[3]: 4.668119326877552
+// gst: Time { hour: 4, min: 40, sec: 5.229576759185761 }
 
     time_from_decimal_hours(decimal)
 }
