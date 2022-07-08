@@ -1,9 +1,7 @@
-#[cfg(test)]
-extern crate approx_eq;
-#[cfg(test)]
-use crate::time::Month;
+use chrono::Datelike;
+use chrono::naive::NaiveDate;
 
-use crate::time::{ Date, julian_day };
+use crate::time::julian_day_from_generic_datetime;
 
 /// Example
 /// ```rust
@@ -90,11 +88,45 @@ pub fn normalize_angle(value: f64, max: f64) -> f64 {
 }
 
 /// Returns the obliquity of the ecliptic (ε), the angle between
-/// the planes of the equator and the ecliptic, from the given date.
-/// (Peter Duffett-Smith, p.41)
+/// the planes of the equator and the ecliptic, from the given datetime.
+///
+/// References:
+/// - (Peter Duffett-Smith, p.41)
+///
+/// Note:
+/// Does not have to be datetime, but date...
+///
+/// Example:
+/// ```rust
+/// use approx_eq::assert_approx_eq;
+/// use chrono::naive::NaiveDate;
+/// use sowngwala::utils::mean_obliquity_of_the_epliptic;
+///
+/// // TODO:
+/// // It was originally: (1980, 1, 0)
+/// let date = NaiveDate::from_ymd(1979, 12, 31);
+/// let oblique: f64 = mean_obliquity_of_the_epliptic(date);
+///
+/// assert_approx_eq!(
+///     oblique,
+///     23.441893,
+///     1e-6
+/// );
+/// ```
 #[allow(clippy::many_single_char_names)]
-pub fn mean_obliquity_of_the_epliptic(&date: &Date) -> f64 {
-    let mut jd = julian_day(&date);
+pub fn mean_obliquity_of_the_epliptic<T>(date: T) -> f64
+    where T: Datelike,
+          T: std::marker::Copy,
+          T: std::fmt::Debug,
+          T: std::fmt::Display
+{
+    let mut jd = julian_day_from_generic_datetime(
+        NaiveDate::from_ymd(
+            date.year(),
+            date.month(),
+            date.day()
+        ).and_hms(0, 0, 0)
+    );
     jd -= 2_451_545.0; // January 1.5, 2000
 
     let t = jd / 36_525.0;
@@ -103,25 +135,3 @@ pub fn mean_obliquity_of_the_epliptic(&date: &Date) -> f64 {
     23.439_292 - delta
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use approx_eq::assert_approx_eq;
-
-    #[test]
-    fn mean_obliquity_of_the_epliptic_works() {
-        let date = Date {
-            year: 1980,
-            month: Month::Jan,
-            day: 0.0,
-        };
-
-        let oblique = mean_obliquity_of_the_epliptic(&date);
-
-        assert_approx_eq!(
-            oblique,
-            23.441893,
-            1e-6
-        );
-    }
-}

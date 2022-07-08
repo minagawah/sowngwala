@@ -19,10 +19,9 @@
 /// Or, TDT is explained in details in:
 /// Peter Duffett-Smith, pp.22-23
 
-#[cfg(test)]
-extern crate approx_eq;
+use chrono::Datelike;
 
-use crate::time::{ Date, decimal_year_from_date };
+use crate::time::decimal_year_from_generic_date;
 
 /// Before the year -500, calculate:
 /// ΔT = -20 + 32 * u^2
@@ -202,16 +201,11 @@ fn get_after_ad2150(year: f64) -> f64 {
 /// Example:
 /// ```rust
 /// use approx_eq::assert_approx_eq;
-/// use sowngwala::time::{Date, Month};
-/// use sowngwala::delta_t::delta_t_from_date;
+/// use chrono::naive::{NaiveDate, NaiveTime};
+/// use sowngwala::delta_t::delta_t_from_generic_date;
 ///
-/// let date = Date {
-///     year: 1986,
-///     month: Month::Jan,
-///     day: 1.0,
-/// };
-///
-/// let delta_t = delta_t_from_date(&date);
+/// let date = NaiveDate::from_ymd(1986, 1, 1);
+/// let delta_t = delta_t_from_generic_date(date);
 ///
 /// assert_approx_eq!(
 ///     delta_t, // 54.89627599023825
@@ -219,8 +213,13 @@ fn get_after_ad2150(year: f64) -> f64 {
 ///     1e-3
 /// );
 /// ```
-pub fn delta_t_from_date(&date: &Date) -> f64 {
-    let year = decimal_year_from_date(&date);
+pub fn delta_t_from_generic_date<T>(date: T) -> f64
+    where T: Datelike,
+          T: std::marker::Copy,
+          T: std::fmt::Debug,
+          T: std::fmt::Display
+{
+    let year = decimal_year_from_generic_date(date);
 
     if year < -500.0 {
         get_before_bc500(year)

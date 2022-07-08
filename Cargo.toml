@@ -1,11 +1,12 @@
 [package]
 name = "sowngwala"
-version = "0.5.1"
+version = "0.6.0"
 authors = ["Hiroki Minagawa <minagawa@tokyo800.jp>"]
 edition = "2018"
 publish = false
 
 [dependencies]
+chrono = "0.4.19"
 serde = { version = "1.0.127", features = ["derive"] }
 
 [dev-dependencies]
