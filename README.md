@@ -2,24 +2,23 @@
 
 ## About
 
-__"sowngwala"__ is a library for calculating sun's position.
+"sowngwala" is a library for calculating sun's position.
 __"sowng-"__ stands for the _"sun"_ in
 _[Belter language](https://expanse.fandom.com/wiki/Belter_Creole)_
-_(from a Sci-Fi TV series "The Expanse" (2015))_,
-and __"-wala"__ for _"one who is professional at"_.
+from a sci-fi TV series _"The Expanse" (2015)_.
+__"-wala"__ for )"one who is professional at"_.
 
-Most of the materials provided in the program are based on:
+Programs are mainly based on:
 
 - [Peter Duffett-Smith "Practical Astronomy With Your Calculator"  
 (The Press Syndicate of the University of Cambridge, 1988)](https://books.google.co.jp/books?id=DwJfCtzaVvYC&hl=ja&source=gbs_book_similarbooks)
 
-## Examples
+## Usage
 
-### (Example 1) Finding Julian Day
+### (Example 1) Julian Day
 
-On Saturday, October 26, 1985, 1:35 AM,
-Marty McFly departs to 1955.
-Let's see if we can find the julian day for the date.
+Marty McFly goes back in time on Saturday, October 26, 1985, 1:35 AM, departing to 1955.  
+Let's see if we can find the Julian Day:
 
 ```rust
 use chrono::naive::{NaiveDate, NaiveDateTime};
@@ -32,14 +31,13 @@ let jd: f64 = julian_day_from_generic_datetime(datetime);
 // jd: 2446364.565972222
 ```
 
-### (Example 2) Finding "Zhi"
+### (Example 2) Zhi (支)
 
-In Chinese astrology, a year is divided into 12, called "支" (Zhi), or _"Branches"_,
-and you can easily figure out by finding the ecliptic longitude of the sun.
+In Chinese astrology, a year is divided into 12,
+each of which is called "支" (zhi), or a "branch".  
+By calculating the ecliptic longitude of the sun, you can easily find "支" (zhi).
 
-Find more on Chinese astrology in
-_["mikaboshi"](https://github.com/minagawah/mikaboshi)_,
-a Feng-Shui calculation library using _"sowngwala"_.
+This is how it's done in one of my projects, _["mikaboshi"](https://github.com/minagawah/mikaboshi)_, a _Feng-Shui_ calculation library using _"sowngwalla"_.
 
 ```rust
 use chrono::naive::NaiveDate;
@@ -80,6 +78,34 @@ let branch: usize = if (315.0..345.0).contains(&lng) {
     // lng >= 285.0 || lng < 315.0
     11 // 小寒 (xiaohan) + 大寒 (dahan) ---> 丑 (chou)
 };
+```
+
+Also, implemented as a test in [src/sun.rs](src/sun.rs).  
+Try run it:
+```shell
+$ cargo test "see_if_you_can_find_monthly_zhi"
+```
+
+## Notes
+
+### (1) cargo doc
+
+Do:
+```shell
+$ cargo doc --open
+```
+where documents are generated under `target/doc`.
+
+### (2) cargo fmt
+
+The syntax found in [rustfmt.toml](rustfmt.toml):
+```toml
+format_strings = true
+```
+works only for the Nightly build.  
+When you `cargo fmt`, you need:
+```shell
+cargo +nightly fmt
 ```
 
 ## Dislaimer

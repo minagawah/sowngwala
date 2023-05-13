@@ -1,22 +1,15 @@
-use core::ops::Add;
-use chrono::{
-    DateTime,
-    Datelike,
-    Timelike,
-    Duration,
-};
-use chrono::offset::{
-    Utc,
-    FixedOffset,
-    TimeZone,
-};
 use chrono::naive::{
-    NaiveDate,
-    NaiveTime,
-    NaiveDateTime,
+    NaiveDate, NaiveDateTime, NaiveTime,
 };
+use chrono::offset::{FixedOffset, TimeZone, Utc};
+use chrono::{
+    DateTime, Datelike, Duration, Timelike,
+};
+use core::ops::Add;
 
-use crate::constants::{ NUM_OF_DAYS_IN_A_YEAR, J2000 };
+use crate::constants::{
+    J2000, NUM_OF_DAYS_IN_A_YEAR,
+};
 use crate::coords::{Angle, Direction};
 use crate::sun::equation_of_time_from_utc;
 use crate::utils::carry_over;
@@ -34,7 +27,8 @@ use crate::utils::carry_over;
 /// use sowngwala::time::build_fixed;
 ///
 /// let zone: i32 = 4;
-/// let result: DateTime<FixedOffset> = build_fixed(2021, 1, 1, 22, 37, 0, 0, zone);
+/// let result: DateTime<FixedOffset> =
+///     build_fixed(2021, 1, 1, 22, 37, 0, 0, zone);
 ///
 /// assert_eq!(result.hour(), 22);
 /// assert_eq!(result.minute(), 37);
@@ -49,7 +43,7 @@ pub fn build_fixed(
     min: u32,
     sec: u32,
     nano: u32,
-    zone: i32
+    zone: i32,
 ) -> DateTime<FixedOffset> {
     FixedOffset::east(zone * 3600)
         .ymd(year, month, day)
@@ -68,7 +62,8 @@ pub fn build_fixed(
 /// use chrono::offset::Utc;
 /// use sowngwala::time::build_utc;
 ///
-/// let utc: DateTime<Utc> = build_utc(2021, 1, 1, 22, 37, 0, 0);
+/// let utc: DateTime<Utc> =
+///     build_utc(2021, 1, 1, 22, 37, 0, 0);
 ///
 /// assert_eq!(utc.hour(), 22);
 /// assert_eq!(utc.minute(), 37);
@@ -89,8 +84,9 @@ pub fn build_utc(
         .with_timezone(&Utc)
 }
 
-/// Given the specific date and time, returns right ascension (α)
-/// and declination (δ) of equatorial coordinate.
+/// Given the specific date and time, returns right
+/// ascension (α) and declination (δ) of equatorial
+/// coordinate.
 ///
 /// * `dt` - DateTime
 ///
@@ -103,8 +99,8 @@ pub fn build_utc(
 /// use chrono::naive::{NaiveDate, NaiveDateTime};
 /// use sowngwala::time::naive_date_from_generic_datetime;
 ///
-/// let dt: NaiveDateTime = NaiveDate::from_ymd(1979, 2, 26)
-///     .and_hms(16, 0, 0);
+/// let dt: NaiveDateTime =
+///     NaiveDate::from_ymd(1979, 2, 26).and_hms(16, 0, 0);
 ///
 /// let date: NaiveDate = naive_date_from_generic_datetime(dt);
 ///
@@ -112,12 +108,15 @@ pub fn build_utc(
 /// assert_eq!(date.month(), 2);
 /// assert_eq!(date.day(), 26);
 /// ```
-pub fn naive_date_from_generic_datetime<T>(dt: T) -> NaiveDate
-    where T: Datelike,
-          T: Timelike,
-          T: std::marker::Copy,
-          T: std::fmt::Debug,
-          T: std::fmt::Display
+pub fn naive_date_from_generic_datetime<T>(
+    dt: T,
+) -> NaiveDate
+where
+    T: Datelike,
+    T: Timelike,
+    T: std::marker::Copy,
+    T: std::fmt::Debug,
+    T: std::fmt::Display,
 {
     NaiveDate::from_ymd(
         dt.year(),
@@ -126,14 +125,19 @@ pub fn naive_date_from_generic_datetime<T>(dt: T) -> NaiveDate
     )
 }
 
-pub fn naive_time_from_generic_datetime<T>(dt: T) -> NaiveTime
-    where T: Datelike, T: Timelike, T: std::fmt::Display
+pub fn naive_time_from_generic_datetime<T>(
+    dt: T,
+) -> NaiveTime
+where
+    T: Datelike,
+    T: Timelike,
+    T: std::fmt::Display,
 {
     NaiveTime::from_hms_nano(
         dt.hour(),
         dt.minute(),
         dt.second(),
-        dt.nanosecond()
+        dt.nanosecond(),
     )
 }
 
@@ -141,18 +145,23 @@ pub fn naive_time_from_generic_datetime<T>(dt: T) -> NaiveTime
 ///
 ///   y = year + (month - 0.5) / 12
 ///
-/// This gives "y" for the middle of the month, which is accurate enough
-/// given the precision in the known values of ΔT. The following
-/// polynomial expressions can be used calculate the value of ΔT
-/// (in seconds) over the time period covered by of the Five Millennium
-/// Canon of Solar Eclipses: -1999 to +3000.
-pub fn decimal_year_from_generic_date<T>(date: T) -> f64
-    where T: Datelike,
-          T: std::marker::Copy,
-          T: std::fmt::Debug,
-          T: std::fmt::Display
+/// This gives "y" for the middle of the month, which
+/// is accurate enough given the precision in the known
+/// values of ΔT. The following polynomial expressions
+/// can be used calculate the value of ΔT (in seconds)
+/// over the time period covered by of the Five
+/// Millennium Canon of Solar Eclipses: -1999 to +3000.
+pub fn decimal_year_from_generic_date<T>(
+    date: T,
+) -> f64
+where
+    T: Datelike,
+    T: std::marker::Copy,
+    T: std::fmt::Debug,
+    T: std::fmt::Display,
 {
-    (date.year() as f64) + (date.month() as f64 - 0.5) / 12.0
+    (date.year() as f64)
+        + (date.month() as f64 - 0.5) / 12.0
 }
 
 /// Converts `NativeTime` into Decimal Hours.
@@ -175,21 +184,23 @@ pub fn decimal_year_from_generic_date<T>(date: T) -> f64
 ///     1e-6
 /// );
 /// ```
-pub fn decimal_hours_from_naive_time(t: NaiveTime) -> f64 {
+pub fn decimal_hours_from_naive_time(
+    t: NaiveTime,
+) -> f64 {
     let hour = t.hour() as f64;
     let min = t.minute() as f64;
 
     // A bit differs from Duffett-Smith's
-    let sec_0 = (t.nanosecond() as f64) / 1_000_000_000_f64;
+    let sec_0 =
+        (t.nanosecond() as f64) / 1_000_000_000_f64;
 
     let sec = (t.second() as f64) + sec_0;
 
-    let dec: f64 = hour + (
-        (min + (sec / 60.0)) / 60.0
-    );
+    let dec: f64 =
+        hour + ((min + (sec / 60.0)) / 60.0);
 
     if hour < 0.0 || min < 0.0 || sec < 0.0 {
-        - dec
+        -dec
     } else {
         dec
     }
@@ -216,25 +227,26 @@ pub fn decimal_hours_from_naive_time(t: NaiveTime) -> f64 {
 /// );
 /// ```
 pub fn decimal_hours_from_generic_time<T>(t: T) -> f64
-    where T: Timelike,
-          T: std::marker::Copy,
-          T: std::fmt::Debug,
-          T: std::fmt::Display
+where
+    T: Timelike,
+    T: std::marker::Copy,
+    T: std::fmt::Debug,
+    T: std::fmt::Display,
 {
     let hour = t.hour() as f64;
     let min = t.minute() as f64;
 
     // A bit differs from Duffett-Smith's
-    let sec_0 = (t.nanosecond() as f64) / 1_000_000_000_f64;
+    let sec_0 =
+        (t.nanosecond() as f64) / 1_000_000_000_f64;
 
     let sec = (t.second() as f64) + sec_0;
 
-    let dec: f64 = hour + (
-        (min + (sec / 60.0)) / 60.0
-    );
+    let dec: f64 =
+        hour + ((min + (sec / 60.0)) / 60.0);
 
     if hour < 0.0 || min < 0.0 || sec < 0.0 {
-        - dec
+        -dec
     } else {
         dec
     }
@@ -246,32 +258,40 @@ pub fn decimal_hours_from_angle(angle: Angle) -> f64 {
 
     let sec: f64 = angle.second().abs();
 
-    let dec: f64 = hour + (
-        (min + (sec / 60.0)) / 60.0
-    );
+    let dec: f64 =
+        hour + ((min + (sec / 60.0)) / 60.0);
 
-    if angle.hour() < 0 || angle.minute() < 0 || angle.second() < 0.0 {
-        - dec
+    if angle.hour() < 0
+        || angle.minute() < 0
+        || angle.second() < 0.0
+    {
+        -dec
     } else {
         dec
     }
 }
 
 /// Not in use...
-pub fn decimal_days_from_generic_datetime<T>(dt: T) -> f64
-    where T: Datelike,
-          T: Timelike,
-          T: std::marker::Copy,
-          T: std::fmt::Debug,
-          T: std::fmt::Display
+pub fn decimal_days_from_generic_datetime<T>(
+    dt: T,
+) -> f64
+where
+    T: Datelike,
+    T: Timelike,
+    T: std::marker::Copy,
+    T: std::fmt::Debug,
+    T: std::fmt::Display,
 {
-    let t: NaiveTime = naive_time_from_generic_datetime(dt);
+    let t: NaiveTime =
+        naive_time_from_generic_datetime(dt);
     let dec: f64 = decimal_hours_from_generic_time(t);
     (dt.day() as f64) + (dec / 24.0)
 }
 
 // Carry-over utils (1)
-pub fn hms_from_decimal_hours(dec: f64) -> (i32, i32, f64) {
+pub fn hms_from_decimal_hours(
+    dec: f64,
+) -> (i32, i32, f64) {
     let hour = dec.floor() as i32;
     let base_0: f64 = dec.fract() * 60.0;
     let min = base_0.floor() as i32;
@@ -300,27 +320,27 @@ pub fn nano_from_second(sec_0: f64) -> (u32, u32) {
 /// use chrono::naive::NaiveTime;
 /// use sowngwala::time::naive_time_from_decimal_hours;
 ///
-/// let t: NaiveTime = naive_time_from_decimal_hours(18.52417);
+/// let t: NaiveTime =
+///     naive_time_from_decimal_hours(18.52417);
 ///
 /// assert_eq!(t.hour(), 18);
 /// assert_eq!(t.minute(), 31);
 /// assert_eq!(t.second(), 27);
 /// ```
 #[allow(clippy::many_single_char_names)]
-pub fn naive_time_from_decimal_hours(dec: f64) -> NaiveTime {
+pub fn naive_time_from_decimal_hours(
+    dec: f64,
+) -> NaiveTime {
     let angle: Angle = angle_from_decimal_hours(dec);
     angle.to_naive_time()
 }
 
 #[allow(clippy::many_single_char_names)]
 pub fn angle_from_decimal_hours(dec: f64) -> Angle {
-    let sign: i16 = if dec < 0.0 {
-        -1
-    } else {
-        1
-    };
+    let sign: i16 = if dec < 0.0 { -1 } else { 1 };
 
-    let (h, m, s): (i32, i32, f64) = hms_from_decimal_hours(dec.abs());
+    let (h, m, s): (i32, i32, f64) =
+        hms_from_decimal_hours(dec.abs());
 
     let mut hour: i32 = h;
     let mut min: i32 = m;
@@ -343,12 +363,15 @@ pub fn angle_from_decimal_hours(dec: f64) -> Angle {
 /// use chrono::Timelike;
 /// use sowngwala::time::naive_time_from_decimal_days;
 ///
-/// let (day, naive) = naive_time_from_decimal_days(17.25);
+/// let (day, naive) =
+///     naive_time_from_decimal_days(17.25);
 ///
 /// assert_eq!(day, 17);
 /// assert_eq!(naive.hour(), 6);
 /// ```
-pub fn naive_time_from_decimal_days(days: f64) -> (u32, NaiveTime) {
+pub fn naive_time_from_decimal_days(
+    days: f64,
+) -> (u32, NaiveTime) {
     let day = days.floor() as u32;
     let dec: f64 = days.fract() * 24.0;
     let naive = naive_time_from_decimal_hours(dec);
@@ -369,7 +392,9 @@ pub fn naive_time_from_decimal_days(days: f64) -> (u32, NaiveTime) {
 /// assert_eq!(is_julian_date(date), false);
 /// ```
 pub fn is_julian_date<T>(date: T) -> bool
-    where T: Datelike, T: std::fmt::Display
+where
+    T: Datelike,
+    T: std::fmt::Display,
 {
     if date.year() > 1582 {
         return false;
@@ -420,7 +445,9 @@ pub fn is_leap_year(year: i32) -> bool {
 /// ```
 #[allow(clippy::many_single_char_names)]
 pub fn day_number_from_generic_date<T>(date: T) -> u32
-    where T: Datelike, T: std::fmt::Display
+where
+    T: Datelike,
+    T: std::fmt::Display,
 {
     let tmp: f64 = if is_leap_year(date.year()) {
         62.0
@@ -440,7 +467,8 @@ pub fn day_number_from_generic_date<T>(date: T) -> u32
 
 /// Note:
 /// Regardless of the month, the diff is of "Jan 0th".
-/// Say, for "July 27th, 1988", it will be the diff between:
+/// Say, for "July 27th, 1988", it will be the diff
+/// between:
 ///
 ///    Jan 0th, 1988
 ///
@@ -497,7 +525,8 @@ pub fn days_since_1990(year: i32) -> i32 {
 /// };
 ///
 /// let date = NaiveDate::from_ymd(1985, 2, 17);
-/// let time: NaiveTime = naive_time_from_decimal_hours(6.0);
+/// let time: NaiveTime =
+///     naive_time_from_decimal_hours(6.0);
 /// let dt = NaiveDateTime::new(date, time);
 ///
 /// assert_eq!(
@@ -506,12 +535,15 @@ pub fn days_since_1990(year: i32) -> i32 {
 /// );
 /// ```
 #[allow(clippy::many_single_char_names)]
-pub fn julian_day_from_generic_datetime<T>(dt: T) -> f64
-    where T: Datelike,
-          T: Timelike,
-          T: std::marker::Copy,
-          T: std::fmt::Debug,
-          T: std::fmt::Display,
+pub fn julian_day_from_generic_datetime<T>(
+    dt: T,
+) -> f64
+where
+    T: Datelike,
+    T: Timelike,
+    T: std::marker::Copy,
+    T: std::fmt::Debug,
+    T: std::fmt::Display,
 {
     julian_day(
         dt.year(),
@@ -522,10 +554,11 @@ pub fn julian_day_from_generic_datetime<T>(dt: T) -> f64
 
 #[allow(clippy::many_single_char_names)]
 pub fn julian_day_from_generic_date<T>(date: T) -> f64
-    where T: Datelike,
-          T: std::marker::Copy,
-          T: std::fmt::Debug,
-          T: std::fmt::Display,
+where
+    T: Datelike,
+    T: std::marker::Copy,
+    T: std::fmt::Debug,
+    T: std::fmt::Display,
 {
     julian_day(
         date.year(),
@@ -534,15 +567,14 @@ pub fn julian_day_from_generic_date<T>(date: T) -> f64
     )
 }
 
-/// Converts a generic datetime into Julian Day.
-/// A bit of difference from Duffett-Smith.
-/// For one of the function arguments `day`,
-/// Duffett-Smith suggests a float (ex. 7.5).
-/// Whereas we want `u32` because `NaiveDate`
-/// would not accept float for `day`.
-/// So, the idea is to use `NaiveDateTime`,
-/// and include the excess (which is 0.5)
-/// into `NaiveTime` already.
+/// Converts a generic datetime into Julian Day. It is
+/// a bit different from that of Duffett-Smith.
+/// For one of the function arguments `day`, Duffett-
+/// Smith suggests a float (ex. 7.5). Whereas we want
+/// `u32` because `NaiveDate` would not accept float
+/// for `day`. So, the idea is to use `NaiveDateTime`,
+/// and include the excess (which is 0.5) into
+/// `NaiveTime` already.
 ///
 /// References:
 /// - (Peter Duffett-Smith, pp.6-7)
@@ -566,7 +598,11 @@ pub fn julian_day_from_generic_date<T>(date: T) -> f64
 /// );
 /// ```
 #[allow(clippy::many_single_char_names)]
-pub fn julian_day(year: i32, month: u32, day: f64) -> f64 {
+pub fn julian_day(
+    year: i32,
+    month: u32,
+    day: f64,
+) -> f64 {
     let (y, m) = if month == 1 || month == 2 {
         ((year - 1) as f64, (month + 12) as f64)
     } else {
@@ -574,11 +610,7 @@ pub fn julian_day(year: i32, month: u32, day: f64) -> f64 {
     };
 
     let b: f64 = if is_julian_date(
-        NaiveDate::from_ymd(
-            year,
-            month,
-            day as u32,
-        )
+        NaiveDate::from_ymd(year, month, day as u32),
     ) {
         0.0
     } else {
@@ -597,12 +629,11 @@ pub fn julian_day(year: i32, month: u32, day: f64) -> f64 {
     b + c + d + day + 1_720_994.5
 }
 
-/// Converts Julian Day into `NaiveDateTime`.
-/// Duffett-Smith suggests a float value (ex. 17.5)
-/// for `day` for the returned result, but we want
-/// the excess (which is 0.5) being separate.
-/// That is why, instead of returning `NaiveDate`,
-/// returning `NaiveDateTime`,
+/// Converts Julian Day into `NaiveDateTime`. Duffett-
+/// Smith suggests a float value (ex. 17.5) for `day`
+/// for the returned result, but we want the excess
+/// (which is 0.5) being separate. That is why, instead
+/// of returning `NaiveDate`, returning `NaiveDateTime`,
 ///
 /// References:
 /// - (Peter Duffett-Smith, p.8)
@@ -614,7 +645,8 @@ pub fn julian_day(year: i32, month: u32, day: f64) -> f64 {
 /// use chrono::naive::NaiveDateTime;
 /// use sowngwala::time::naive_from_julian_day;
 ///
-/// let naive: NaiveDateTime = naive_from_julian_day(2_446_113.75);
+/// let naive: NaiveDateTime =
+///     naive_from_julian_day(2_446_113.75);
 ///
 /// assert_eq!(naive.year(), 1985);
 /// assert_eq!(naive.month(), 2);
@@ -622,43 +654,44 @@ pub fn julian_day(year: i32, month: u32, day: f64) -> f64 {
 /// assert_eq!(naive.hour(), 6);
 /// ```
 #[allow(clippy::many_single_char_names)]
-pub fn naive_from_julian_day(mut jd: f64) -> NaiveDateTime {
+pub fn naive_from_julian_day(
+    mut jd: f64,
+) -> NaiveDateTime {
     jd += 0.5;
 
     let i = jd.floor();
     let f = jd.abs().fract();
     let b = if i > 2_299_160.0 {
-        let a = ((i - 1_867_216.25) / 36_524.25).floor();
+        let a =
+            ((i - 1_867_216.25) / 36_524.25).floor();
         i + 1.0 + a - (a / 4.0).floor()
     } else {
         i
     };
     let c = b + 1524.0;
-    let d = ((c - 122.1) / NUM_OF_DAYS_IN_A_YEAR).floor();
+    let d =
+        ((c - 122.1) / NUM_OF_DAYS_IN_A_YEAR).floor();
     let e = (d * NUM_OF_DAYS_IN_A_YEAR).floor();
     let g = ((c - e) / 30.6001).floor();
 
-    let decimal_days = c - e + f - (g * 30.6001).floor();
+    let decimal_days =
+        c - e + f - (g * 30.6001).floor();
 
     // This is where it differs from Duffett-Smith.
-    let (day, naive_time) = naive_time_from_decimal_days(decimal_days);
+    let (day, naive_time) =
+        naive_time_from_decimal_days(decimal_days);
 
-    let month = if g < 13.5 {
-        g - 1.0
-    } else {
-        g - 13.0
-    };
-
+    let month =
+        if g < 13.5 { g - 1.0 } else { g - 13.0 };
     let year = if month > 2.5 {
         d - 4716.0
     } else {
         d - 4715.0
     };
-
     let naive_date = NaiveDate::from_ymd(
         year as i32,
         month as u32,
-        day
+        day,
     );
 
     NaiveDateTime::new(naive_date, naive_time)
@@ -669,30 +702,36 @@ pub fn j2000_from_julian_day(jd: f64) -> f64 {
 }
 
 pub fn j2000_from_generic_datetime<T>(dt: T) -> f64
-    where T: Datelike,
-          T: Timelike,
-          T: std::marker::Copy,
-          T: std::fmt::Debug,
-          T: std::fmt::Display,
+where
+    T: Datelike,
+    T: Timelike,
+    T: std::marker::Copy,
+    T: std::fmt::Debug,
+    T: std::fmt::Display,
 {
     j2000_from_julian_day(
-        julian_day_from_generic_datetime(dt)
+        julian_day_from_generic_datetime(dt),
     )
 }
 
-pub fn modified_julian_day_from_julian_day(jd: f64) -> f64 {
+pub fn modified_julian_day_from_julian_day(
+    jd: f64,
+) -> f64 {
     jd - 2_400_000.5
 }
 
-pub fn modified_julian_day_from_generic_datetime<T>(dt: T) -> f64
-    where T: Datelike,
-          T: Timelike,
-          T: std::marker::Copy,
-          T: std::fmt::Debug,
-          T: std::fmt::Display,
+pub fn modified_julian_day_from_generic_datetime<T>(
+    dt: T,
+) -> f64
+where
+    T: Datelike,
+    T: Timelike,
+    T: std::marker::Copy,
+    T: std::fmt::Debug,
+    T: std::fmt::Display,
 {
     modified_julian_day_from_julian_day(
-        julian_day_from_generic_datetime(dt)
+        julian_day_from_generic_datetime(dt),
     )
 }
 
@@ -707,11 +746,16 @@ pub fn modified_julian_day_from_generic_datetime<T>(dt: T) -> f64
 /// use chrono::naive::{NaiveDate, NaiveDateTime};
 /// use sowngwala::time::day_of_the_week;
 ///
-/// let naive: NaiveDate = NaiveDate::from_ymd(1985, 2, 17);
+/// let naive: NaiveDate =
+///     NaiveDate::from_ymd(1985, 2, 17);
+///
 /// assert_eq!(day_of_the_week(naive), 1);
 /// ```
 pub fn day_of_the_week<T>(dt: T) -> u32
-    where T: Datelike, T: std::marker::Copy, T: std::fmt::Display
+where
+    T: Datelike,
+    T: std::marker::Copy,
+    T: std::fmt::Display,
 {
     // let jd = julian_day(dt);
     // let a = (jd + 1.5) / 7.0;
@@ -737,7 +781,9 @@ pub fn day_of_the_week<T>(dt: T) -> u32
 /// let days: i64 = 1;
 /// let zone: i32 = 4;
 ///
-/// let naive: NaiveDateTime = NaiveDate::from_ymd(2021, 1, 1).and_hms(22, 37, 0);
+/// let naive: NaiveDateTime =
+///     NaiveDate::from_ymd(2021, 1, 1)
+///         .and_hms(22, 37, 0);
 /// let naive: NaiveDateTime = add_date(naive, days);
 ///
 /// assert_eq!(naive.day(), 2);
@@ -745,15 +791,18 @@ pub fn day_of_the_week<T>(dt: T) -> u32
 /// assert_eq!(naive.minute(), 37);
 /// assert_eq!(naive.second(), 0);
 ///
-/// let fixed: DateTime<FixedOffset> = build_fixed(2021, 1, 1, 22, 37, 0, 0, zone);
-/// let fixed: DateTime<FixedOffset> = add_date(fixed, days);
+/// let fixed: DateTime<FixedOffset> =
+///     build_fixed(2021, 1, 1, 22, 37, 0, 0, zone);
+/// let fixed: DateTime<FixedOffset> =
+///     add_date(fixed, days);
 ///
 /// assert_eq!(fixed.day(), 2);
 /// assert_eq!(fixed.hour(), 22);
 /// assert_eq!(fixed.minute(), 37);
 /// assert_eq!(fixed.second(), 0);
 ///
-/// let utc: DateTime<Utc> = build_utc(2021, 1, 1, 22, 37, 0, 0);
+/// let utc: DateTime<Utc> =
+///     build_utc(2021, 1, 1, 22, 37, 0, 0);
 /// let utc: DateTime<Utc> = add_date(utc, 1);
 ///
 /// assert_eq!(utc.day(), 2);
@@ -762,33 +811,36 @@ pub fn day_of_the_week<T>(dt: T) -> u32
 /// assert_eq!(utc.second(), 0);
 /// ```
 pub fn add_date<T>(dt: T, days: i64) -> T
-    where T: Add<Duration> + Add<Duration, Output = T>
+where
+    T: Add<Duration> + Add<Duration, Output = T>,
 {
-    dt + Duration::days(days as i64)
+    dt + Duration::days(days)
 }
 
 pub fn normalize_angle(angle: Angle) -> (Angle, f64) {
-    let (sec, min_excess): (f64, f64) = carry_over(angle.second(), 60.0);
+    let (sec, min_excess): (f64, f64) =
+        carry_over(angle.second(), 60.0);
 
-    let min: f64 = (angle.minute() as f64) + min_excess;
-    let (min, hour_excess): (f64, f64) = carry_over(min, 60.0);
+    let min: f64 =
+        (angle.minute() as f64) + min_excess;
+    let (min, hour_excess): (f64, f64) =
+        carry_over(min, 60.0);
 
-    let hour: f64 = (angle.hour() as f64) + hour_excess;
+    let hour: f64 =
+        (angle.hour() as f64) + hour_excess;
+    let (hour, day_excess): (f64, f64) =
+        carry_over(hour, 24.0);
 
-    let (hour, day_excess): (f64, f64) = carry_over(hour, 24.0);
-
-    let angle_1 = Angle::new(
-        hour as i32,
-        min as i32,
-        sec,
-    );
+    let angle_1 =
+        Angle::new(hour as i32, min as i32, sec);
 
     (angle_1, day_excess)
 }
 
-/// Converts `NaiveDateTime` into `DateTime<FixedOffset>`.
-/// Resulted `hour` should be the same regardless of `zone` given.
-/// In another word, it just attaches `zone` to the given.
+/// Converts `NaiveDateTime` into
+/// `DateTime<FixedOffset>`. Resulted `hour` should be
+/// the same regardless of `zone` given. In another
+/// word, it just attaches `zone` to the given.
 ///
 /// Example:
 /// ```rust
@@ -798,16 +850,23 @@ pub fn normalize_angle(angle: Angle) -> (Angle, f64) {
 /// use sowngwala::time::fixed_from_naive;
 ///
 /// let zone: i32 = 4;
-/// let naive: NaiveDateTime = NaiveDate::from_ymd(2021, 1, 1).and_hms(22, 37, 0);
-/// let fixed: DateTime<FixedOffset> = fixed_from_naive(naive, zone);
+/// let naive: NaiveDateTime =
+///     NaiveDate::from_ymd(2021, 1, 1)
+///         .and_hms(22, 37, 0);
+/// let fixed: DateTime<FixedOffset> =
+///     fixed_from_naive(naive, zone);
 ///
 /// assert_eq!(fixed.hour(), 22);
 /// assert_eq!(fixed.minute(), 37);
 /// assert_eq!(fixed.second(), 0);
 /// ```
-pub fn fixed_from_naive(naive: NaiveDateTime, zone: i32) -> DateTime<FixedOffset> {
+pub fn fixed_from_naive(
+    naive: NaiveDateTime,
+    zone: i32,
+) -> DateTime<FixedOffset> {
     FixedOffset::east(zone * 3600)
-        .from_local_datetime(&naive).unwrap()
+        .from_local_datetime(&naive)
+        .unwrap()
 }
 
 /// Converts `DateTime<Utc>` into `DateTime<FixedOffset>`.
@@ -830,22 +889,26 @@ pub fn fixed_from_naive(naive: NaiveDateTime, zone: i32) -> DateTime<FixedOffset
 /// };
 ///
 /// let zone: i32 = 4;
-/// let utc: DateTime<Utc> = build_utc(2021, 1, 1, 22, 37, 0, 0);
-/// let fixed: DateTime<FixedOffset> = fixed_from_utc(utc, zone);
+/// let utc: DateTime<Utc> =
+///     build_utc(2021, 1, 1, 22, 37, 0, 0);
+/// let fixed: DateTime<FixedOffset> =
+///     fixed_from_utc(utc, zone);
 ///
 /// assert_eq!(fixed.hour(), 2);
 /// assert_eq!(fixed.minute(), 37);
 /// assert_eq!(fixed.second(), 0);
 /// ```
-pub fn fixed_from_utc(utc: DateTime<Utc>, zone: i32) -> DateTime<FixedOffset> {
-    utc.with_timezone(
-        &FixedOffset::east(zone * 3600)
-    )
+pub fn fixed_from_utc(
+    utc: DateTime<Utc>,
+    zone: i32,
+) -> DateTime<FixedOffset> {
+    utc.with_timezone(&FixedOffset::east(zone * 3600))
 }
 
 /// Converts `NaiveDateTime` into `DateTime<Utc>`.
-/// Resulted `hour` should be the same regardless of `zone` given.
-/// In another word, it just attaches `zone` to the given.
+/// Resulted `hour` should be the same regardless of
+/// `zone` given. In another word, it just attaches
+/// `zone` to the given.
 ///
 /// Example
 /// ```rust
@@ -854,20 +917,25 @@ pub fn fixed_from_utc(utc: DateTime<Utc>, zone: i32) -> DateTime<FixedOffset> {
 /// use chrono::naive::{NaiveDate, NaiveDateTime};
 /// use sowngwala::time::utc_from_naive;
 ///
-/// let naive: NaiveDateTime = NaiveDate::from_ymd(2021, 1, 1).and_hms(22, 37, 0);
+/// let naive: NaiveDateTime =
+///     NaiveDate::from_ymd(2021, 1, 1)
+///         .and_hms(22, 37, 0);
 /// let utc: DateTime<Utc> = utc_from_naive(naive);
 ///
 /// assert_eq!(utc.hour(), 22);
 /// assert_eq!(utc.minute(), 37);
 /// assert_eq!(utc.second(), 0);
 /// ```
-pub fn utc_from_naive(naive: NaiveDateTime) -> DateTime<Utc> {
+pub fn utc_from_naive(
+    naive: NaiveDateTime,
+) -> DateTime<Utc> {
     DateTime::<Utc>::from_utc(naive, Utc)
 }
 
-/// Converts `DateTime<FixedOffset>` into `DateTime<Utc>`.
-/// Resulted `hour` should be the same regardless of `zone` given.
-/// Meaning, for `FixedOffset` given, there will be
+/// Converts `DateTime<FixedOffset>`
+/// into `DateTime<Utc>`. Resulted `hour` should be
+/// the same regardless of `zone` given. Meaning,
+/// for `FixedOffset` given, there will be
 /// a calculation for `Utc` returned.
 ///
 /// References:
@@ -884,20 +952,24 @@ pub fn utc_from_naive(naive: NaiveDateTime) -> DateTime<Utc> {
 /// };
 ///
 /// let zone: i32 = 4;
-/// let fixed: DateTime<FixedOffset> = build_fixed(2021, 1, 1, 2, 37, 0, 0, zone);
+/// let fixed: DateTime<FixedOffset> =
+///     build_fixed(2021, 1, 1, 2, 37, 0, 0, zone);
 /// let utc: DateTime<Utc> = utc_from_fixed(fixed);
 ///
 /// assert_eq!(utc.hour(), 22);
 /// assert_eq!(utc.minute(), 37);
 /// assert_eq!(utc.second(), 0);
 /// ```
-pub fn utc_from_fixed(fixed: DateTime<FixedOffset>) -> DateTime<Utc> {
+pub fn utc_from_fixed(
+    fixed: DateTime<FixedOffset>,
+) -> DateTime<Utc> {
     Utc.from_utc_datetime(&fixed.naive_utc())
 }
 
-/// Converts `DateTime<FixedOffset>` into `NaiveDateTime`.
-/// Resulted `hour` should be the same regardless of `zone` given.
-/// In another word, it just removes `zone` from the given.
+/// Converts `DateTime<FixedOffset>` into
+/// `NaiveDateTime`. Resulted `hour` should be the same
+/// regardless of `zone` given. In another word, it
+/// just removes `zone` from the given.
 ///
 /// Example:
 /// ```rust
@@ -910,20 +982,24 @@ pub fn utc_from_fixed(fixed: DateTime<FixedOffset>) -> DateTime<Utc> {
 /// };
 ///
 /// let zone: i32 = 4;
-/// let fixed: DateTime<FixedOffset> = build_fixed(2021, 1, 1, 22, 37, 0, 0, zone);
+/// let fixed: DateTime<FixedOffset> =
+///     build_fixed(2021, 1, 1, 22, 37, 0, 0, zone);
 /// let naive: NaiveDateTime = naive_from_fixed(fixed);
 ///
 /// assert_eq!(naive.hour(), 22);
 /// assert_eq!(naive.minute(), 37);
 /// assert_eq!(naive.second(), 0);
 /// ```
-pub fn naive_from_fixed(fixed: DateTime<FixedOffset>) -> NaiveDateTime {
+pub fn naive_from_fixed(
+    fixed: DateTime<FixedOffset>,
+) -> NaiveDateTime {
     fixed.naive_local()
 }
 
 /// Converts `DateTime<Utc>` into `NaiveDateTime`.
-/// Resulted `hour` should be the same regardless of `zone` given.
-/// In another word, it just removes `zone` from the given.
+/// Resulted `hour` should be the same regardless of
+/// `zone` given. In another word, it just removes
+/// `zone` from the given.
 ///
 /// Example:
 /// ```rust
@@ -936,20 +1012,25 @@ pub fn naive_from_fixed(fixed: DateTime<FixedOffset>) -> NaiveDateTime {
 /// };
 ///
 /// let zone: i32 = 4;
-/// let utc: DateTime<Utc> = build_utc(2021, 1, 1, 22, 37, 0, 0);
+/// let utc: DateTime<Utc> =
+///     build_utc(2021, 1, 1, 22, 37, 0, 0);
 /// let naive: NaiveDateTime = naive_from_utc(utc);
 ///
 /// assert_eq!(naive.hour(), 22);
 /// assert_eq!(naive.minute(), 37);
 /// assert_eq!(naive.second(), 0);
 /// ```
-pub fn naive_from_utc(utc: DateTime<Utc>) -> NaiveDateTime {
+pub fn naive_from_utc(
+    utc: DateTime<Utc>,
+) -> NaiveDateTime {
     utc.naive_utc()
 }
 
-pub fn eot_decimal_from_utc(utc: DateTime<Utc>) -> f64 {
+pub fn eot_decimal_from_utc(
+    utc: DateTime<Utc>,
+) -> f64 {
     decimal_hours_from_angle(
-        equation_of_time_from_utc(utc)
+        equation_of_time_from_utc(utc),
     )
 }
 
@@ -968,8 +1049,10 @@ pub fn eot_decimal_from_utc(utc: DateTime<Utc>) -> f64 {
 /// };
 ///
 /// let zone: i32 = 9;
-/// let fixed: DateTime<FixedOffset> = build_fixed(2021, 1, 1, 9, 0, 0, 0, zone);
-/// let utc: DateTime<Utc> = eot_fortified_utc_from_fixed(fixed);
+/// let fixed: DateTime<FixedOffset> =
+///     build_fixed(2021, 1, 1, 9, 0, 0, 0, zone);
+/// let utc: DateTime<Utc> =
+///     eot_fortified_utc_from_fixed(fixed);
 ///
 /// assert_eq!(utc.year(), 2020);
 /// assert_eq!(utc.month(), 12);
@@ -980,24 +1063,28 @@ pub fn eot_decimal_from_utc(utc: DateTime<Utc>) -> f64 {
 /// assert_eq!(utc.nanosecond(), 227_691_152);
 /// ```
 #[allow(clippy::many_single_char_names)]
-pub fn eot_fortified_utc_from_fixed(fixed: DateTime<FixedOffset>) -> DateTime<Utc> {
+pub fn eot_fortified_utc_from_fixed(
+    fixed: DateTime<FixedOffset>,
+) -> DateTime<Utc> {
     let utc: DateTime<Utc> = utc_from_fixed(fixed);
 
-    let utc_decimal: f64 = decimal_hours_from_generic_time(
-        naive_from_utc(utc)
-    );
+    let utc_decimal: f64 =
+        decimal_hours_from_generic_time(
+            naive_from_utc(utc),
+        );
 
     let eot_decimal: f64 = eot_decimal_from_utc(utc);
 
     let angle: Angle = angle_from_decimal_hours(
-        utc_decimal + eot_decimal
+        utc_decimal + eot_decimal,
     );
-
-    let (angle_1, day_excess): (Angle, f64) = normalize_angle(angle);
+    let (angle_1, day_excess): (Angle, f64) =
+        normalize_angle(angle);
 
     let t: NaiveTime = angle_1.to_naive_time();
 
-    let utc_1: DateTime<Utc> = add_date(utc, day_excess as i64);
+    let utc_1: DateTime<Utc> =
+        add_date(utc, day_excess as i64);
 
     build_utc(
         utc_1.year(),
@@ -1027,7 +1114,8 @@ pub fn eot_fortified_utc_from_fixed(fixed: DateTime<FixedOffset>) -> DateTime<Ut
 /// };
 ///
 /// let nanosecond: u32 = 670_000_000;
-/// let utc: DateTime<Utc> = build_utc(1980, 4, 22, 14, 36, 51, nanosecond);
+/// let utc: DateTime<Utc> =
+///     build_utc(1980, 4, 22, 14, 36, 51, nanosecond);
 /// let gst: NaiveTime = gst_from_utc(utc);
 ///
 /// assert_eq!(gst.hour(), 4);
@@ -1040,17 +1128,22 @@ pub fn gst_from_utc(utc: DateTime<Utc>) -> NaiveTime {
 
     let s = jd - 2_451_545.0;
     let t = s / 36_525.0;
-    let t0 = 6.697_374_558 + (2_400.051_336 * t) + (0.000_025_862 * t * t);
+    let t0 = 6.697_374_558
+        + (2_400.051_336 * t)
+        + (0.000_025_862 * t * t);
 
     let (t0, _factor) = carry_over(t0, 24.0);
 
-    let naive_time = naive_time_from_generic_datetime(utc);
+    let naive_time =
+        naive_time_from_generic_datetime(utc);
 
-    let mut decimal = decimal_hours_from_generic_time(naive_time);
+    let mut decimal =
+        decimal_hours_from_generic_time(naive_time);
     decimal *= 1.002_737_909;
     decimal += t0;
 
-    let (decimal, _factor): (f64, f64) = carry_over(decimal, 24.0);
+    let (decimal, _factor): (f64, f64) =
+        carry_over(decimal, 24.0);
 
     naive_time_from_decimal_hours(decimal)
 }
@@ -1068,8 +1161,9 @@ pub fn gst_from_utc(utc: DateTime<Utc>) -> NaiveTime {
 /// use sowngwala::time::utc_from_gst;
 ///
 /// let nanosecond: u32 = 230_000_000;
-/// let gst: NaiveDateTime = NaiveDate::from_ymd(1980, 4, 22)
-///     .and_hms_nano(4, 40, 5, nanosecond);
+/// let gst: NaiveDateTime =
+///     NaiveDate::from_ymd(1980, 4, 22)
+///         .and_hms_nano(4, 40, 5, nanosecond);
 ///
 /// let utc = utc_from_gst(gst);
 /// assert_eq!(utc.hour(), 14);
@@ -1082,19 +1176,23 @@ pub fn gst_from_utc(utc: DateTime<Utc>) -> NaiveTime {
 /// ```
 #[allow(clippy::many_single_char_names)]
 pub fn utc_from_gst<T>(gst: T) -> NaiveTime
-    where T: Datelike,
-          T: Timelike,
-          T: std::marker::Copy,
-          T: std::fmt::Debug,
-          T: std::fmt::Display
+where
+    T: Datelike,
+    T: Timelike,
+    T: std::marker::Copy,
+    T: std::fmt::Debug,
+    T: std::fmt::Display,
 {
     // Luckily, we only need date, not datetime.
     let jd = julian_day_from_generic_date(gst);
 
     let s = jd - 2_451_545.0;
     let t = s / 36_525.0;
-    let t0 = 6.697_374_558 + (2_400.051_336 * t) + (0.000_025_862 * t * t);
-    let (t0, _factor): (f64, f64) = carry_over(t0, 24.0);
+    let t0 = 6.697_374_558
+        + (2_400.051_336 * t)
+        + (0.000_025_862 * t * t);
+    let (t0, _factor): (f64, f64) =
+        carry_over(t0, 24.0);
 
     let decimal = decimal_hours_from_generic_time(
         NaiveTime::from_hms_nano(
@@ -1102,11 +1200,15 @@ pub fn utc_from_gst<T>(gst: T) -> NaiveTime
             gst.minute(),
             gst.second(),
             gst.nanosecond(),
-        )
+        ),
     );
-    let (decimal, _factor2): (f64, f64) = carry_over(decimal - t0, 24.0);
 
-    naive_time_from_decimal_hours(decimal * 0.997_269_566_3)
+    let (decimal, _factor2): (f64, f64) =
+        carry_over(decimal - t0, 24.0);
+
+    naive_time_from_decimal_hours(
+        decimal * 0.997_269_566_3,
+    )
 }
 
 /// Given GST and longitude, returns LST.
@@ -1125,8 +1227,9 @@ pub fn utc_from_gst<T>(gst: T) -> NaiveTime
 /// let dir = Direction::West;
 /// let lng = 64.0;
 /// let nanosecond: u32 = 230_000_000;
-/// let gst: NaiveDateTime = NaiveDate::from_ymd(1980, 4, 22)
-///     .and_hms_nano(4, 40, 5, nanosecond);
+/// let gst: NaiveDateTime =
+///     NaiveDate::from_ymd(1980, 4, 22)
+///         .and_hms_nano(4, 40, 5, nanosecond);
 ///
 /// let lst = lst_from_gst(gst, lng, dir);
 ///
@@ -1135,15 +1238,20 @@ pub fn utc_from_gst<T>(gst: T) -> NaiveTime
 /// assert_eq!(lst.second(), 5); // 5.230000000001169
 /// assert_eq!(lst.nanosecond(), 230_000_000);
 /// ```
-pub fn lst_from_gst<T>(gst: T, lng: f64, dir: Direction) -> NaiveTime
-    where T: Datelike,
-          T: Timelike,
-          T: std::marker::Copy,
-          T: std::fmt::Debug,
-          T: std::fmt::Display
+pub fn lst_from_gst<T>(
+    gst: T,
+    lng: f64,
+    dir: Direction,
+) -> NaiveTime
+where
+    T: Datelike,
+    T: Timelike,
+    T: std::marker::Copy,
+    T: std::fmt::Debug,
+    T: std::fmt::Display,
 {
     let decimal = decimal_hours_from_generic_time(
-        naive_time_from_generic_datetime(gst)
+        naive_time_from_generic_datetime(gst),
     );
     let diff = lng / 15.0;
 
@@ -1180,8 +1288,9 @@ pub fn lst_from_gst<T>(gst: T, lng: f64, dir: Direction) -> NaiveTime
 /// let dir = Direction::West;
 /// let lng = 64.0;
 /// let nanosecond: u32 = 230_000_000;
-/// let lst: NaiveDateTime = NaiveDate::from_ymd(1980, 4, 22)
-///     .and_hms_nano(0, 24, 5, nanosecond);
+/// let lst: NaiveDateTime =
+///     NaiveDate::from_ymd(1980, 4, 22)
+///         .and_hms_nano(0, 24, 5, nanosecond);
 ///
 /// let gst = gst_from_lst(lst, lng, dir);
 ///
@@ -1190,15 +1299,20 @@ pub fn lst_from_gst<T>(gst: T, lng: f64, dir: Direction) -> NaiveTime
 /// assert_eq!(gst.second(), 5); // 5.230000000000956
 /// assert_eq!(gst.nanosecond(), 230_000_000);
 /// ```
-pub fn gst_from_lst<T>(lst: T, lng: f64, dir: Direction) -> NaiveTime
-    where T: Datelike,
-          T: Timelike,
-          T: std::marker::Copy,
-          T: std::fmt::Debug,
-          T: std::fmt::Display
+pub fn gst_from_lst<T>(
+    lst: T,
+    lng: f64,
+    dir: Direction,
+) -> NaiveTime
+where
+    T: Datelike,
+    T: Timelike,
+    T: std::marker::Copy,
+    T: std::fmt::Debug,
+    T: std::fmt::Display,
 {
     let decimal = decimal_hours_from_generic_time(
-        naive_time_from_generic_datetime(lst)
+        naive_time_from_generic_datetime(lst),
     );
     let diff = lng / 15.0;
 
@@ -1232,10 +1346,14 @@ mod tests {
         // Marty McFly goes back in time,
         // and arrives at future Peabody Farm
         // on Saturday, November 5, 1955, 6:15 am.
-        let datetime: NaiveDateTime = NaiveDate::from_ymd(1985, 10, 26)
-            .and_hms(1, 35, 0);
+        let datetime: NaiveDateTime =
+            NaiveDate::from_ymd(1985, 10, 26)
+                .and_hms(1, 35, 0);
 
-        let jd: f64 = julian_day_from_generic_datetime(datetime);
+        let jd: f64 =
+            julian_day_from_generic_datetime(
+                datetime,
+            );
 
         assert_approx_eq!(
             jd, // 2446364.565972222

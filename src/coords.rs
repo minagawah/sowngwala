@@ -1,26 +1,17 @@
-use std::f64::consts::PI;
-use std::convert::From;
-use chrono::{
-    DateTime,
-    Datelike,
-    Timelike,
-};
-use chrono::offset::Utc;
-use chrono::naive::{
-    NaiveDate,
-    NaiveTime,
-    NaiveDateTime,
-};
 use crate::time::{
     angle_from_decimal_hours,
     decimal_hours_from_angle,
-    decimal_hours_from_generic_time,
-    gst_from_utc,
-    lst_from_gst,
-    nano_from_second,
-    normalize_angle,
+    decimal_hours_from_generic_time, gst_from_utc,
+    lst_from_gst, nano_from_second, normalize_angle,
 };
 use crate::utils::mean_obliquity_of_the_epliptic;
+use chrono::naive::{
+    NaiveDate, NaiveDateTime, NaiveTime,
+};
+use chrono::offset::Utc;
+use chrono::{DateTime, Datelike, Timelike};
+use std::convert::From;
+use std::f64::consts::PI;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Angle {
@@ -30,13 +21,27 @@ pub struct Angle {
 }
 
 impl Angle {
-    pub fn new(hour: i32, minute: i32, second: f64) -> Self {
-        Angle { hour, minute, second }
+    pub fn new(
+        hour: i32,
+        minute: i32,
+        second: f64,
+    ) -> Self {
+        Angle {
+            hour,
+            minute,
+            second,
+        }
     }
 
-    pub fn hour(&self) -> i32 { self.hour }
-    pub fn minute(&self) -> i32 { self.minute }
-    pub fn second(&self) -> f64 { self.second }
+    pub fn hour(&self) -> i32 {
+        self.hour
+    }
+    pub fn minute(&self) -> i32 {
+        self.minute
+    }
+    pub fn second(&self) -> f64 {
+        self.second
+    }
 
     pub fn to_naive_time(self) -> NaiveTime {
         self.into()
@@ -45,11 +50,11 @@ impl Angle {
 
 impl From<Angle> for NaiveTime {
     fn from(angle: Angle) -> Self {
-        let (angle_1, _day_excess) = normalize_angle(angle);
+        let (angle_1, _day_excess) =
+            normalize_angle(angle);
 
-        let (sec, nano): (u32, u32) = nano_from_second(
-            angle_1.second()
-        );
+        let (sec, nano): (u32, u32) =
+            nano_from_second(angle_1.second());
 
         NaiveTime::from_hms_nano(
             angle_1.hour() as u32,
@@ -98,7 +103,7 @@ pub struct EquaCoord {
 // Equatorial Coordinate (with Hour-Angle)
 #[derive(Debug)]
 pub struct EquaCoord2 {
-    pub ha: Angle, // hour-angle (H)
+    pub ha: Angle,  // hour-angle (H)
     pub dec: Angle, // declination (δ)
 }
 
@@ -109,8 +114,9 @@ pub struct HorizCoord {
     pub azi: Angle, // azimuth (A)
 }
 
-/// Given UTC, right ascension (α), and longitude (along with its direction),
-/// returns hour-angle (H).
+/// Given UTC, right ascension (α), and longitude
+/// (along with its direction), returns
+/// hour-angle (H).
 ///
 /// * `utc` - UTC
 /// * `asc` - Right-ascension
@@ -144,9 +150,12 @@ pub struct HorizCoord {
 /// // TODO: Do we need `zone`? Originally, no zone.
 /// let zone: i32 = 4;
 /// let nanosecond: u32 = 670_000_000;
-/// let utc: DateTime<Utc> = build_utc(1980, 4, 22, 14, 36, 51, nanosecond);
+/// let utc: DateTime<Utc> =
+///     build_utc(1980, 4, 22, 14, 36, 51, nanosecond);
 ///
-/// let hour_angle: Angle = hour_angle_from_utc(utc, asc, lng, dir);
+/// let hour_angle: Angle =
+///     hour_angle_from_utc(utc, asc, lng, dir);
+///
 /// assert_eq!(hour_angle.hour(), 5);
 /// assert_eq!(hour_angle.minute(), 51);
 /// assert_approx_eq!(
@@ -165,17 +174,21 @@ pub fn hour_angle_from_utc(
     let gst_0: NaiveDateTime = NaiveDate::from_ymd(
         utc.year(),
         utc.month(),
-        utc.day()
-    ).and_hms_nano(
+        utc.day(),
+    )
+    .and_hms_nano(
         gst.hour(),
         gst.minute(),
         gst.second(),
-        gst.nanosecond()
+        gst.nanosecond(),
     );
 
-    let lst: NaiveTime = lst_from_gst(gst_0, lng, dir);
-    let lst_decimal: f64 = decimal_hours_from_generic_time(lst);
-    let asc_decimal: f64 = decimal_hours_from_angle(asc);
+    let lst: NaiveTime =
+        lst_from_gst(gst_0, lng, dir);
+    let lst_decimal: f64 =
+        decimal_hours_from_generic_time(lst);
+    let asc_decimal: f64 =
+        decimal_hours_from_angle(asc);
 
     let mut hour_angle = lst_decimal - asc_decimal;
 
@@ -186,8 +199,9 @@ pub fn hour_angle_from_utc(
     angle_from_decimal_hours(hour_angle)
 }
 
-/// Given UT, hour-angle (H), and longitude (along with its direction),
-/// returns right ascension (α).
+/// Given UT, hour-angle (H), and longitude
+/// (along with its direction), returns right
+/// ascension (α).
 ///
 /// * `utc` - UTC
 /// * `ha` - Hour-angle (H)
@@ -218,9 +232,15 @@ pub fn hour_angle_from_utc(
 /// // TODO: Do we need `zone`? Originally, no zone.
 /// let zone: i32 = 4;
 /// let nanosecond: u32 = 670_000_000;
-/// let utc: DateTime<Utc> = build_utc(1980, 4, 22, 14, 36, 51, nanosecond);
+/// let utc: DateTime<Utc> =
+///     build_utc(1980, 4, 22, 14, 36, 51, nanosecond);
 ///
-/// let asc = right_ascension_from_utc(utc, ha, lng, dir);
+/// let asc = right_ascension_from_utc(
+///     utc,
+///     ha,
+///     lng,
+///     dir
+/// );
 /// assert_eq!(asc.hour(), 18);
 /// assert_eq!(asc.minute(), 32);
 /// assert_approx_eq!(
@@ -240,16 +260,20 @@ pub fn right_ascension_from_utc(
         utc.year(),
         utc.month(),
         utc.day(),
-    ).and_hms_nano(
+    )
+    .and_hms_nano(
         gst.hour(),
         gst.minute(),
         gst.second(),
-        gst.nanosecond()
+        gst.nanosecond(),
     );
 
-    let lst: NaiveTime = lst_from_gst(gst_0, lng, dir);
-    let lst_decimal: f64 = decimal_hours_from_generic_time(lst);
-    let ha_decimal: f64 = decimal_hours_from_angle(ha);
+    let lst: NaiveTime =
+        lst_from_gst(gst_0, lng, dir);
+    let lst_decimal: f64 =
+        decimal_hours_from_generic_time(lst);
+    let ha_decimal: f64 =
+        decimal_hours_from_angle(ha);
 
     let mut asc = lst_decimal - ha_decimal;
     if asc < 0.0 {
@@ -259,9 +283,10 @@ pub fn right_ascension_from_utc(
     angle_from_decimal_hours(asc)
 }
 
-/// Given equatorial coordinate with hour-angle (H), declination (δ),
-/// and observer's latitude (φ), returns altitude (a) and azimuth (A)
-/// for that of horizontal coordinate.
+/// Given equatorial coordinate with hour-angle (H),
+/// declination (δ), and observer's latitude (φ),
+/// returns altitude (a) and azimuth (A) for that of
+/// horizontal coordinate.
 ///
 /// * `coord` - Equatorial coordinate (with hour-angle)
 /// * `coord.ha` - Hour-angle (H)
@@ -311,20 +336,28 @@ pub fn right_ascension_from_utc(
 ///     1e-0
 /// );
 /// ```
-pub fn horizon_from_equatorial(coord: EquaCoord2, lat: f64) -> HorizCoord {
-    let hour_angle: f64 = (decimal_hours_from_angle(coord.ha) * 15.0).to_radians();
-    let decline: f64 = decimal_hours_from_angle(coord.dec).to_radians();
+pub fn horizon_from_equatorial(
+    coord: EquaCoord2,
+    lat: f64,
+) -> HorizCoord {
+    let hour_angle: f64 =
+        (decimal_hours_from_angle(coord.ha) * 15.0)
+            .to_radians();
+    let decline: f64 =
+        decimal_hours_from_angle(coord.dec)
+            .to_radians();
     let latitude: f64 = lat.to_radians();
 
-    let altitude = (
-        (decline.sin() * latitude.sin()) +
-            (decline.cos() * latitude.cos() * hour_angle.cos())
-    ).asin();
+    let altitude = ((decline.sin() * latitude.sin())
+        + (decline.cos()
+            * latitude.cos()
+            * hour_angle.cos()))
+    .asin();
 
-    let mut azimuth = (
-        (decline.sin() - (latitude.sin() * altitude.sin())) /
-            (latitude.cos() * altitude.cos())
-    ).acos();
+    let mut azimuth = ((decline.sin()
+        - (latitude.sin() * altitude.sin()))
+        / (latitude.cos() * altitude.cos()))
+    .acos();
 
     azimuth = if hour_angle.sin() < 0.0 {
         azimuth
@@ -333,14 +366,18 @@ pub fn horizon_from_equatorial(coord: EquaCoord2, lat: f64) -> HorizCoord {
     };
 
     HorizCoord {
-        alt: angle_from_decimal_hours(altitude.to_degrees()),
-        azi: angle_from_decimal_hours(azimuth.to_degrees()),
+        alt: angle_from_decimal_hours(
+            altitude.to_degrees(),
+        ),
+        azi: angle_from_decimal_hours(
+            azimuth.to_degrees(),
+        ),
     }
 }
 
-/// Given altitude (a), azimuth (A), and observer's latitude (φ),
-/// returns hour-angle (H) and declination (δ)
-/// for that of equatorial coordinate.
+/// Given altitude (a), azimuth (A), and observer's
+/// latitude (φ), returns hour-angle (H) and
+/// declination (δ) for that of equatorial coordinate.
 ///
 /// * `coord` - Horizontal coordinate
 /// * `coord.alt` - Altitude (a)
@@ -370,7 +407,8 @@ pub fn horizon_from_equatorial(coord: EquaCoord2, lat: f64) -> HorizCoord {
 /// let azi = Angle::new(283, 16, 16.0);
 ///
 /// let coord_0 = HorizCoord { alt, azi };
-/// let coord: EquaCoord2 = equatorial_from_horizon(coord_0, lat);
+/// let coord: EquaCoord2 =
+///     equatorial_from_horizon(coord_0, lat);
 /// let ha: Angle = coord.ha;
 /// let dec: Angle = coord.dec;
 ///
@@ -390,20 +428,28 @@ pub fn horizon_from_equatorial(coord: EquaCoord2, lat: f64) -> HorizCoord {
 ///     1e-1
 /// );
 /// ```
-pub fn equatorial_from_horizon(coord: HorizCoord, lat: f64) -> EquaCoord2 {
-    let altitude: f64 = decimal_hours_from_angle(coord.alt).to_radians();
-    let azimuth: f64 = decimal_hours_from_angle(coord.azi).to_radians();
+pub fn equatorial_from_horizon(
+    coord: HorizCoord,
+    lat: f64,
+) -> EquaCoord2 {
+    let altitude: f64 =
+        decimal_hours_from_angle(coord.alt)
+            .to_radians();
+    let azimuth: f64 =
+        decimal_hours_from_angle(coord.azi)
+            .to_radians();
     let latitude: f64 = lat.to_radians();
 
-    let decline = (
-        (altitude.sin() * latitude.sin()) +
-            (altitude.cos() * latitude.cos() * azimuth.cos())
-    ).asin();
+    let decline = ((altitude.sin() * latitude.sin())
+        + (altitude.cos()
+            * latitude.cos()
+            * azimuth.cos()))
+    .asin();
 
-    let mut hour_angle = (
-        (altitude.sin() - (latitude.sin() * decline.sin())) /
-            (latitude.cos() * decline.cos())
-    ).acos();
+    let mut hour_angle = ((altitude.sin()
+        - (latitude.sin() * decline.sin()))
+        / (latitude.cos() * decline.cos()))
+    .acos();
 
     hour_angle = if azimuth.sin() < 0.0 {
         hour_angle
@@ -415,11 +461,14 @@ pub fn equatorial_from_horizon(coord: HorizCoord, lat: f64) -> EquaCoord2 {
 
     EquaCoord2 {
         ha: angle_from_decimal_hours(hour_angle),
-        dec: angle_from_decimal_hours(decline.to_degrees())
+        dec: angle_from_decimal_hours(
+            decline.to_degrees(),
+        ),
     }
 }
 
-/// Given LST and hour-angle (H), returns right ascension (α),
+/// Given LST and hour-angle (H), returns right
+/// ascension (α),
 ///
 /// * `lst` - LST
 /// * `ha` - Hour-angle (H)
@@ -440,13 +489,18 @@ pub fn equatorial_from_horizon(coord: HorizCoord, lat: f64) -> EquaCoord2 {
 ///   right_ascension_from_lst_and_hour_angle,
 /// };
 ///
-/// let lst: NaiveDateTime = NaiveDate::from_ymd(1980, 4, 22)
-///     .and_hms(0, 24, 5);
+/// let lst: NaiveDateTime =
+///     NaiveDate::from_ymd(1980, 4, 22)
+///         .and_hms(0, 24, 5);
 ///
 /// // hour-angle
 /// let ha: Angle = Angle::new(5, 51, 44.0);
 ///
-/// let asc: Angle = right_ascension_from_lst_and_hour_angle(lst, ha);
+/// let asc: Angle =
+///     right_ascension_from_lst_and_hour_angle(
+///         lst,
+///         ha
+///     );
 ///
 /// assert_eq!(asc.hour(), 18);
 /// assert_eq!(asc.minute(), 32);
@@ -458,21 +512,24 @@ pub fn equatorial_from_horizon(coord: HorizCoord, lat: f64) -> EquaCoord2 {
 /// ```
 pub fn right_ascension_from_lst_and_hour_angle<T>(
     lst: T,
-    ha: Angle
+    ha: Angle,
 ) -> Angle
-    where T: Datelike,
-          T: Timelike,
-          T: std::marker::Copy,
-          T: std::fmt::Debug,
-          T: std::fmt::Display
+where
+    T: Datelike,
+    T: Timelike,
+    T: std::marker::Copy,
+    T: std::fmt::Debug,
+    T: std::fmt::Display,
 {
-    let ha_decimal: f64 = decimal_hours_from_angle(ha);
+    let ha_decimal: f64 =
+        decimal_hours_from_angle(ha);
     let angle = Angle::new(
         lst.hour() as i32,
         lst.minute() as i32,
         lst.second() as f64,
     );
-    let lst_decimal: f64 = decimal_hours_from_angle(angle);
+    let lst_decimal: f64 =
+        decimal_hours_from_angle(angle);
     let mut asc = lst_decimal - ha_decimal;
     if asc < 0.0 {
         asc += 24.0;
@@ -481,10 +538,11 @@ pub fn right_ascension_from_lst_and_hour_angle<T>(
     angle_from_decimal_hours(asc)
 }
 
-/// Given ecliptic ecliptic latitude (β) and longitude (λ)
-/// (optionally takes date for specific obliquity of the ecliptic (ε)),
-/// returns right ascension (α) and declination (δ)
-/// for that of equatorial coordinate.
+/// Given ecliptic ecliptic latitude (β) and
+/// longitude (λ) (optionally takes date for specific
+/// obliquity of the ecliptic (ε)), returns right
+/// ascension (α) and declination (δ) for that of
+/// equatorial coordinate.
 ///
 /// * `coord` - Ecliptic coordinate
 /// * `coord.lat` - Latitude (β)
@@ -517,7 +575,11 @@ pub fn right_ascension_from_lst_and_hour_angle<T>(
 /// // To calculate a specific value
 /// // for mean obliquity of the ecliptic.
 /// let date = NaiveDate::from_ymd(1980, 4, 22);
-/// let coord = equatorial_from_ecliptic_with_generic_date(coord_0, date);
+/// let coord =
+///     equatorial_from_ecliptic_with_generic_date(
+///         coord_0,
+///         date
+///     );
 /// let asc: Angle = coord.asc;
 /// let dec: Angle = coord.dec;
 ///
@@ -542,12 +604,15 @@ pub fn equatorial_from_ecliptic_with_generic_date<T>(
     coord: EcliCoord,
     date: T,
 ) -> EquaCoord
-    where T: Datelike,
-          T: std::marker::Copy,
-          T: std::fmt::Debug,
-          T: std::fmt::Display
+where
+    T: Datelike,
+    T: std::marker::Copy,
+    T: std::fmt::Debug,
+    T: std::fmt::Display,
 {
-    let oblique = mean_obliquity_of_the_epliptic(date).to_radians();
+    let oblique =
+        mean_obliquity_of_the_epliptic(date)
+            .to_radians();
 
     let oblique_cos = oblique.cos();
     let oblique_sin = oblique.sin();
@@ -561,10 +626,12 @@ pub fn equatorial_from_ecliptic_with_generic_date<T>(
     let lng_cos = lng.to_radians().cos();
     let lng_sin = lng.to_radians().sin();
 
-    let decline_0 = (lat_sin * oblique_cos) + (lat_cos * oblique_sin * lng_sin);
+    let decline_0 = (lat_sin * oblique_cos)
+        + (lat_cos * oblique_sin * lng_sin);
     let decline = decline_0.asin().to_degrees();
 
-    let y = (lng_sin * oblique_cos) - (lat_tan * oblique_sin);
+    let y = (lng_sin * oblique_cos)
+        - (lat_tan * oblique_sin);
     let x = lng_cos;
 
     let mut asc = y.atan2(x).to_degrees();
@@ -577,15 +644,18 @@ pub fn equatorial_from_ecliptic_with_generic_date<T>(
     }
 }
 
-pub fn equatorial_from_ecliptic(coord: EcliCoord) -> EquaCoord {
+pub fn equatorial_from_ecliptic(
+    coord: EcliCoord,
+) -> EquaCoord {
     equatorial_from_ecliptic_with_generic_date(
         coord,
-        NaiveDate::from_ymd(2021, 1, 0)
+        NaiveDate::from_ymd(2021, 1, 0),
     )
 }
 
-/// Given right ascension (α) and declination (δ) of equatorial coordinate
-/// (optionally takes date for specific obliquity of the ecliptic (ε)),
+/// Given right ascension (α) and declination (δ) of
+/// equatorial coordinate (optionally takes date for
+/// specific obliquity of the ecliptic (ε)),
 /// returns latitude (β) and longitude (λ)
 ///
 /// * `coord` - Equatorial coordinate
@@ -618,16 +688,20 @@ pub fn equatorial_from_ecliptic(coord: EcliCoord) -> EquaCoord {
 /// // declination
 /// let dec: Angle = Angle::new(19, 32, 14.2);
 ///
-/// // To calculate a specific value for mean obliquity of the ecliptic.
+/// // To calculate a specific value for mean obliquity
+/// // of the ecliptic.
 /// let date = NaiveDate::from_ymd(1980, 4, 22);
 /// let coord_0 = EquaCoord { asc, dec };
 ///
-/// let coord: EcliCoord = ecliptic_from_equatorial_with_generic_date(
-///     coord_0,
-///     date
-/// );
-/// let lat: Angle = angle_from_decimal_hours(coord.lat);
-/// let lng: Angle = angle_from_decimal_hours(coord.lng);
+/// let coord: EcliCoord =
+///     ecliptic_from_equatorial_with_generic_date(
+///         coord_0,
+///         date
+///     );
+/// let lat: Angle =
+///     angle_from_decimal_hours(coord.lat);
+/// let lng: Angle =
+///     angle_from_decimal_hours(coord.lng);
 ///
 /// assert_eq!(lat.hour(), 4);
 /// assert_eq!(lat.minute(), 52);
@@ -650,20 +724,27 @@ pub fn ecliptic_from_equatorial_with_generic_date<T>(
     coord: EquaCoord,
     date: T,
 ) -> EcliCoord
-    where T: Datelike,
-          T: std::marker::Copy,
-          T: std::fmt::Debug,
-          T: std::fmt::Display
+where
+    T: Datelike,
+    T: std::marker::Copy,
+    T: std::fmt::Debug,
+    T: std::fmt::Display,
 {
-    let oblique: f64 = mean_obliquity_of_the_epliptic(date).to_radians();
+    let oblique: f64 =
+        mean_obliquity_of_the_epliptic(date)
+            .to_radians();
     let oblique_cos: f64 = oblique.cos();
     let oblique_sin: f64 = oblique.sin();
 
     // right ascension (α)
-    let mut asc_decimal: f64 = decimal_hours_from_angle(coord.asc).to_radians();
+    let mut asc_decimal: f64 =
+        decimal_hours_from_angle(coord.asc)
+            .to_radians();
 
     // declination (δ)
-    let dec_decimal: f64 = decimal_hours_from_angle(coord.dec).to_radians();
+    let dec_decimal: f64 =
+        decimal_hours_from_angle(coord.dec)
+            .to_radians();
     asc_decimal *= 15.0;
 
     let asc_sin: f64 = asc_decimal.sin();
@@ -672,10 +753,12 @@ pub fn ecliptic_from_equatorial_with_generic_date<T>(
     let dec_cos: f64 = dec_decimal.cos();
     let dec_tan: f64 = dec_decimal.tan();
 
-    let lat_0: f64 = (dec_sin * oblique_cos) - (dec_cos * oblique_sin * asc_sin);
+    let lat_0: f64 = (dec_sin * oblique_cos)
+        - (dec_cos * oblique_sin * asc_sin);
     let lat: f64 = lat_0.asin().to_degrees();
 
-    let y: f64 = (asc_sin * oblique_cos) + (dec_tan * oblique_sin);
+    let y: f64 = (asc_sin * oblique_cos)
+        + (dec_tan * oblique_sin);
     let x: f64 = asc_cos;
 
     let mut lng: f64 = y.atan2(x).to_degrees();
@@ -684,8 +767,9 @@ pub fn ecliptic_from_equatorial_with_generic_date<T>(
     EcliCoord { lat, lng }
 }
 
-/// Given right ascension (α) and declination (δ) of equatorial coordinate,
-/// returns galactic latitude (b) and galactic longitude (l).
+/// Given right ascension (α) and declination (δ) of
+/// equatorial coordinate, returns galactic
+/// latitude (b) and galactic longitude (l).
 ///
 /// * `coord` - Equatorial coordinate
 /// * `coord.asc` - Right ascension (α)
@@ -718,9 +802,12 @@ pub fn ecliptic_from_equatorial_with_generic_date<T>(
 ///
 /// let coord_0 = EquaCoord { asc, dec };
 ///
-/// let coord: GalacCoord = galactic_from_equatorial(coord_0);
-/// let lat: Angle = angle_from_decimal_hours(coord.lat);
-/// let lng: Angle = angle_from_decimal_hours(coord.lng);
+/// let coord: GalacCoord =
+///     galactic_from_equatorial(coord_0);
+/// let lat: Angle =
+///     angle_from_decimal_hours(coord.lat);
+/// let lng: Angle =
+///     angle_from_decimal_hours(coord.lng);
 ///
 /// assert_eq!(lat.hour(), 51);
 /// assert_eq!(lat.minute(), 7);
@@ -739,23 +826,33 @@ pub fn ecliptic_from_equatorial_with_generic_date<T>(
 /// );
 /// ```
 #[allow(clippy::many_single_char_names)]
-pub fn galactic_from_equatorial(coord: EquaCoord) -> GalacCoord {
+pub fn galactic_from_equatorial(
+    coord: EquaCoord,
+) -> GalacCoord {
     // right ascension (α)
-    let mut asc_decimal: f64 = decimal_hours_from_angle(coord.asc).to_radians();
+    let mut asc_decimal: f64 =
+        decimal_hours_from_angle(coord.asc)
+            .to_radians();
 
     // declination (δ)
-    let dec_decimal: f64 = decimal_hours_from_angle(coord.dec).to_radians();
+    let dec_decimal: f64 =
+        decimal_hours_from_angle(coord.dec)
+            .to_radians();
     asc_decimal *= 15.0;
 
     let dec_sin: f64 = dec_decimal.sin();
     let dec_cos: f64 = dec_decimal.cos();
-    let asc_192: f64 = (asc_decimal.to_degrees() - 192.25).to_radians();
+    let asc_192: f64 = (asc_decimal.to_degrees()
+        - 192.25)
+        .to_radians();
 
     let r_27: f64 = (27.4_f64).to_radians();
     let r_27_sin: f64 = r_27.sin();
     let r_27_cos: f64 = r_27.cos();
 
-    let b_sin: f64 = dec_cos * r_27.cos() * asc_192.cos() + (dec_sin * r_27_sin);
+    let b_sin: f64 =
+        dec_cos * r_27.cos() * asc_192.cos()
+            + (dec_sin * r_27_sin);
     let b: f64 = b_sin.asin();
 
     let y: f64 = dec_sin - (b_sin * r_27_sin);
@@ -771,8 +868,9 @@ pub fn galactic_from_equatorial(coord: EquaCoord) -> GalacCoord {
     }
 }
 
-/// Given galactic latitude (b) and galactic longitude (l),
-/// returns right ascension (α) and declination (δ) of equatorial coordinate,
+/// Given galactic latitude (b) and galactic
+/// longitude (l), returns right ascension (α)
+/// and declination (δ) of equatorial coordinate,
 ///
 /// * `coord` - Galactic coordinate
 /// * `coord.lat` - Galactic latitude (b)
@@ -808,13 +906,14 @@ pub fn galactic_from_equatorial(coord: EquaCoord) -> GalacCoord {
 ///     lng: decimal_hours_from_angle(lng),
 /// };
 ///
-/// let coord: EquaCoord = equatorial_from_galactic(coord_0);
+/// let coord: EquaCoord =
+///     equatorial_from_galactic(coord_0);
 /// let asc: Angle = coord.asc;
 /// let dec: Angle = coord.dec;
 ///
 /// assert_eq!(asc.hour(), 10);
 /// // TODO:
-/// // The book tells it should be 21 for 'asc.min'...
+/// // The book tells it should be 21 for 'asc.min'.
 /// assert_eq!(asc.minute(), 20);
 /// assert_approx_eq!(
 ///     asc.second(), // 59.98205693746215
@@ -831,13 +930,16 @@ pub fn galactic_from_equatorial(coord: EquaCoord) -> GalacCoord {
 /// );
 /// ```
 #[allow(clippy::many_single_char_names)]
-pub fn equatorial_from_galactic(coord: GalacCoord) -> EquaCoord {
+pub fn equatorial_from_galactic(
+    coord: GalacCoord,
+) -> EquaCoord {
     let b: f64 = coord.lat.to_radians(); // // Galactic latitude (b)
     let l: f64 = coord.lng.to_radians(); // Galactic longitude (l)
     let b_sin: f64 = b.sin();
     let b_cos: f64 = b.cos();
 
-    let l_minus_33: f64 = (l.to_degrees() - 33.0).to_radians();
+    let l_minus_33: f64 =
+        (l.to_degrees() - 33.0).to_radians();
     let l_minus_33_sin: f64 = l_minus_33.sin();
     let l_minus_33_cos: f64 = l_minus_33.cos();
 
@@ -845,11 +947,14 @@ pub fn equatorial_from_galactic(coord: GalacCoord) -> EquaCoord {
     let r_27_sin: f64 = r_27.sin();
     let r_27_cos: f64 = r_27.cos();
 
-    let dec_sin: f64 = (b_cos * r_27_cos * l_minus_33_sin) + (b_sin * r_27_sin);
+    let dec_sin: f64 =
+        (b_cos * r_27_cos * l_minus_33_sin)
+            + (b_sin * r_27_sin);
     let dec: f64 = dec_sin.asin();
 
     let y: f64 = b_cos * l_minus_33_cos;
-    let x: f64 = (b_sin * r_27_cos) - (b_cos * r_27_sin * l_minus_33_sin);
+    let x: f64 = (b_sin * r_27_cos)
+        - (b_cos * r_27_sin * l_minus_33_sin);
 
     let mut asc: f64 = y.atan2(x).to_degrees();
     asc += 192.25;
@@ -858,13 +963,16 @@ pub fn equatorial_from_galactic(coord: GalacCoord) -> EquaCoord {
 
     EquaCoord {
         asc: angle_from_decimal_hours(asc),
-        dec: angle_from_decimal_hours(dec.to_degrees()),
+        dec: angle_from_decimal_hours(
+            dec.to_degrees(),
+        ),
     }
 }
 
-/// Given coordinates for two celestial objects expressed in
-/// ecliptic coordinate system (latitude (β) and longitude (λ)),
-/// returns the angle between them.
+/// Given coordinates for two celestial objects
+/// expressed in ecliptic coordinate system
+/// (latitude (β) and longitude (λ)), returns
+/// the angle between them.
 ///
 /// * `coord_0` - Equatorial coordinate
 /// * `coord_0.asc` - Right ascension (α)
@@ -902,10 +1010,11 @@ pub fn equatorial_from_galactic(coord: GalacCoord) -> EquaCoord {
 /// // declination (for Canis Majoris)
 /// let dec_1: Angle = Angle::new(-16, 41, 11.0);
 ///
-/// let angle: f64 = angle_between_two_celestial_objects_for_equatorial(
-///     EquaCoord { asc: asc_0, dec: dec_0 },
-///     EquaCoord { asc: asc_1, dec: dec_1 }
-/// );
+/// let angle: f64 =
+///     angle_between_two_celestial_objects_for_equatorial(
+///         EquaCoord { asc: asc_0, dec: dec_0 },
+///         EquaCoord { asc: asc_1, dec: dec_1 }
+///     );
 ///
 /// assert_approx_eq!(
 ///     angle, // 23.67384942216419
@@ -922,13 +1031,14 @@ pub fn angle_between_two_celestial_objects_for_equatorial(
         decimal_hours_from_angle(coord_0.asc),
         decimal_hours_from_angle(coord_0.dec),
         decimal_hours_from_angle(coord_1.asc),
-        decimal_hours_from_angle(coord_1.dec)
+        decimal_hours_from_angle(coord_1.dec),
     )
 }
 
-/// Given coordinates for two celestial objects expressed in
-/// galactic coordinate system (latitude (b) and longitude (l)),
-/// returns the angle between them.
+/// Given coordinates for two celestial objects
+/// expressed in galactic coordinate system
+/// (latitude (b) and longitude (l)), returns
+/// the angle between them.
 ///
 /// * `coord_0` - Galactic coordinate
 /// * `coord_0.lat` - Galactic latitude (b)
@@ -948,7 +1058,7 @@ pub fn angle_between_two_celestial_objects_for_galactic(
         coord_0.lat,
         coord_0.lng,
         coord_1.lat,
-        coord_1.lng
+        coord_1.lng,
     )
 }
 
@@ -962,10 +1072,8 @@ pub fn angle_between_two_celestial_objects(
     let tmp = ((asc_0 - asc_1) * 15.0).to_radians();
     let dec_0 = dec_0.to_radians();
     let dec_1 = dec_1.to_radians();
-    let d_cos = (dec_0.sin() * dec_1.sin()) +
-        (
-            dec_0.cos() * dec_1.cos() * tmp.cos()
-        );
+    let d_cos = (dec_0.sin() * dec_1.sin())
+        + (dec_0.cos() * dec_1.cos() * tmp.cos());
 
     d_cos.acos().to_degrees()
 }

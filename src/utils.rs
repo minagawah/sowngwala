@@ -1,5 +1,5 @@
-use chrono::Datelike;
 use chrono::naive::NaiveDate;
+use chrono::Datelike;
 
 use crate::time::julian_day_from_generic_datetime;
 
@@ -43,12 +43,15 @@ use crate::time::julian_day_from_generic_datetime;
 /// let (res, up) = carry_over(-61.0, 60.0);
 /// assert_eq!(res, 59.0);
 /// assert_eq!(up, -2.0);
-/// 
+///
 /// let (res, up) = carry_over(-60.1, 60.0);
 /// assert_approx_eq!(res, 59.9, 1e-1);
 /// assert_eq!(up, -2.0);
 /// ```
-pub fn carry_over(value: f64, target: f64) -> (f64, f64) {
+pub fn carry_over(
+    value: f64,
+    target: f64,
+) -> (f64, f64) {
     let mut quotient = value.abs() / target;
 
     quotient = if value < 0.0 {
@@ -87,8 +90,9 @@ pub fn normalize_angle(value: f64, max: f64) -> f64 {
     angle
 }
 
-/// Returns the obliquity of the ecliptic (ε), the angle between
-/// the planes of the equator and the ecliptic, from the given datetime.
+/// Returns the obliquity of the ecliptic (ε),
+/// the angle between the planes of the equator and
+/// the ecliptic, from the given datetime.
 ///
 /// References:
 /// - (Peter Duffett-Smith, p.41)
@@ -105,7 +109,8 @@ pub fn normalize_angle(value: f64, max: f64) -> f64 {
 /// // TODO:
 /// // It was originally: (1980, 1, 0)
 /// let date = NaiveDate::from_ymd(1979, 12, 31);
-/// let oblique: f64 = mean_obliquity_of_the_epliptic(date);
+/// let oblique: f64 =
+///     mean_obliquity_of_the_epliptic(date);
 ///
 /// assert_approx_eq!(
 ///     oblique,
@@ -114,24 +119,28 @@ pub fn normalize_angle(value: f64, max: f64) -> f64 {
 /// );
 /// ```
 #[allow(clippy::many_single_char_names)]
-pub fn mean_obliquity_of_the_epliptic<T>(date: T) -> f64
-    where T: Datelike,
-          T: std::marker::Copy,
-          T: std::fmt::Debug,
-          T: std::fmt::Display
+pub fn mean_obliquity_of_the_epliptic<T>(
+    date: T,
+) -> f64
+where
+    T: Datelike,
+    T: std::marker::Copy,
+    T: std::fmt::Debug,
+    T: std::fmt::Display,
 {
     let mut jd = julian_day_from_generic_datetime(
         NaiveDate::from_ymd(
             date.year(),
             date.month(),
-            date.day()
-        ).and_hms(0, 0, 0)
+            date.day(),
+        )
+        .and_hms(0, 0, 0),
     );
     jd -= 2_451_545.0; // January 1.5, 2000
 
     let t = jd / 36_525.0;
-    let mut delta = (46.815 * t) + (0.0006 * t * t) - (0.001_81 * t * t * t);
+    let mut delta = (46.815 * t) + (0.0006 * t * t)
+        - (0.001_81 * t * t * t);
     delta /= 3600.0;
     23.439_292 - delta
 }
-
