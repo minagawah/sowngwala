@@ -186,7 +186,7 @@ where
 #[allow(clippy::many_single_char_names)]
 pub fn equation_of_time_from_gst(
     gst: NaiveDateTime,
-) -> Angle {
+) -> (Angle, f64) {
     let date: NaiveDate = gst.date();
     let coord: EquaCoord =
         equatorial_position_of_the_sun_from_generic_date(date);
@@ -196,14 +196,15 @@ pub fn equation_of_time_from_gst(
     let utc: NaiveTime = utc_from_gst(naivetime);
     let decimal = decimal_hours_from_naive_time(utc);
     let e = 12.0 - decimal;
-
-    angle_from_decimal_hours(e)
+    let mut angle_0 = angle_from_decimal_hours(e);
+    let day_excess = angle_0.calibrate();
+    (angle_0, day_excess)
 }
 
 #[allow(clippy::many_single_char_names)]
 pub fn equation_of_time_from_utc(
     utc: DateTime<Utc>,
-) -> Angle {
+) -> (Angle, f64) {
     equation_of_time_from_gst(utc.naive_utc())
 }
 

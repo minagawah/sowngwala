@@ -1,8 +1,8 @@
 use crate::time::{
-    angle_from_decimal_hours,
+    angle_from_decimal_hours, calibrate_hmsn,
     decimal_hours_from_angle,
     decimal_hours_from_generic_time, gst_from_utc,
-    lst_from_gst, nano_from_second, normalize_angle,
+    lst_from_gst, nano_from_second,
 };
 use crate::utils::mean_obliquity_of_the_epliptic;
 use chrono::naive::{
@@ -13,11 +13,51 @@ use chrono::{DateTime, Datelike, Timelike};
 use std::convert::From;
 use std::f64::consts::PI;
 
+/// Example
+/// ```rust
+/// use sowngwala::utils::overflow;
+/// use sowngwala::coords::Angle;
+///
+/// let mut angle = Angle::new(0, 0, 63.0);
+/// angle.calibrate();
+/// assert_eq!(angle.second(), 3.0);
+/// assert_eq!(angle.minute(), 1);
+///
+/// let mut angle = Angle::new(0, 63, 0.0);
+/// angle.calibrate();
+/// assert_eq!(angle.minute(), 3);
+/// assert_eq!(angle.hour(), 1);
+///
+/// let mut angle = Angle::new(24, 0, 0.0);
+/// let day_excess = angle.calibrate();
+/// assert_eq!(angle.hour(), 0);
+/// assert_eq!(day_excess, 1.0);
+///
+/// let mut angle = Angle::new(23, 59, 60.0);
+/// let day_excess = angle.calibrate();
+/// assert_eq!(angle.second(), 0.0);
+/// assert_eq!(angle.minute(), 0);
+/// assert_eq!(angle.hour(), 0);
+/// assert_eq!(day_excess, 1.0);
+///
+/// let mut angle = Angle::new(0, 1, -1.0);
+/// angle.calibrate();
+/// assert_eq!(angle.second(), 59.0);
+/// assert_eq!(angle.minute(), 0);
+///
+/// let mut angle = Angle::new(0, 0, -1.0);
+/// let day_excess = angle.calibrate();
+/// assert_eq!(angle.second(), 59.0);
+/// assert_eq!(angle.minute(), 59);
+/// assert_eq!(angle.hour(), 23);
+/// assert_eq!(day_excess, -1.0);
+/// ```
 #[derive(Debug, Copy, Clone)]
 pub struct Angle {
     pub hour: i32,
     pub minute: i32,
     pub second: f64,
+    pub day_excess: f64,
 }
 
 impl Angle {
@@ -26,32 +66,57 @@ impl Angle {
         minute: i32,
         second: f64,
     ) -> Self {
+        // let ((hour, minute, second), day_excess) =
+        //     calibrate_hmsn(hour, minute, second);
+
         Angle {
             hour,
             minute,
             second,
+            day_excess: 0_f64,
         }
     }
 
     pub fn hour(&self) -> i32 {
         self.hour
     }
+
     pub fn minute(&self) -> i32 {
         self.minute
     }
+
     pub fn second(&self) -> f64 {
         self.second
+    }
+
+    pub fn day_excess(&self) -> f64 {
+        self.day_excess
     }
 
     pub fn to_naive_time(self) -> NaiveTime {
         self.into()
     }
+
+    pub fn calibrate(&mut self) -> f64 {
+        let ((hour, min, sec), day_excess) =
+            calibrate_hmsn(
+                self.hour,
+                self.minute,
+                self.second,
+            );
+
+        self.hour = hour;
+        self.minute = min;
+        self.second = sec;
+
+        day_excess
+    }
 }
 
 impl From<Angle> for NaiveTime {
     fn from(angle: Angle) -> Self {
-        let (angle_1, _day_excess) =
-            normalize_angle(angle);
+        let mut angle_1 = angle;
+        angle_1.calibrate();
 
         let (sec, nano): (u32, u32) =
             nano_from_second(angle_1.second());

@@ -3,76 +3,69 @@ use chrono::Datelike;
 
 use crate::time::julian_day_from_generic_datetime;
 
+/// Checks if the given value exceeds
+/// the given target value.
+///
+/// Arguments
+/// * `value` - Value you want to check.
+/// * `base` - Max/min for 'value' to carry over when exceeded.
+///
+/// Results
+/// * `result` - A tuple pair returned.
+/// * `result.0` - Value after the calculation.
+/// * `result.1` - Value denoting how much did the value exceed.
+///
 /// Example
 /// ```rust
 /// use approx_eq::assert_approx_eq;
-/// use sowngwala::utils::carry_over;
+/// use sowngwala::utils::overflow;
 ///
-/// let (res, up) = carry_over(59.0, 60.0);
+/// let (res, up) = overflow(59.0, 60.0);
 /// assert_eq!(res, 59.0);
 /// assert_eq!(up, 0.0);
 ///
-/// let (res, up) = carry_over(60.0, 60.0);
+/// let (res, up) = overflow(60.0, 60.0);
 /// assert_eq!(res, 0.0);
 /// assert_eq!(up, 1.0);
 ///
-/// let (res, up) = carry_over(120.0, 60.0);
+/// let (res, up) = overflow(120.0, 60.0);
 /// assert_eq!(res, 0.0);
 /// assert_eq!(up, 2.0);
 ///
-/// let (res, up) = carry_over(121.0, 60.0);
+/// let (res, up) = overflow(121.0, 60.0);
 /// assert_eq!(res, 1.0);
 /// assert_eq!(up, 2.0);
 ///
-/// let (res, up) = carry_over(120.1, 60.0);
+/// let (res, up) = overflow(120.1, 60.0);
 /// assert_approx_eq!(res, 0.1, 1e-1);
 /// assert_eq!(up, 2.0);
 ///
-/// let (res, up) = carry_over(-60.0, 60.0);
+/// let (res, up) = overflow(-60.0, 60.0);
 /// assert_eq!(res, 0.0);
 /// assert_eq!(up, -1.0);
 ///
-/// let (res, up) = carry_over(-120.0, 60.0);
+/// let (res, up) = overflow(-120.0, 60.0);
 /// assert_eq!(res, 0.0);
 /// assert_eq!(up, -2.0);
 ///
-/// let (res, up) = carry_over(-59.0, 60.0);
-/// assert_eq!(res, 1.0);
+/// let (res, up) = overflow(-59.0, 60.0);
+/// assert_eq!(res, -59.0);
+/// assert_eq!(up, 0.0);
+///
+/// let (res, up) = overflow(-61.0, 60.0);
+/// assert_eq!(res, -1.0);
 /// assert_eq!(up, -1.0);
 ///
-/// let (res, up) = carry_over(-61.0, 60.0);
-/// assert_eq!(res, 59.0);
-/// assert_eq!(up, -2.0);
-///
-/// let (res, up) = carry_over(-60.1, 60.0);
-/// assert_approx_eq!(res, 59.9, 1e-1);
-/// assert_eq!(up, -2.0);
+/// let (res, up) = overflow(-60.1, 60.0);
+/// assert_approx_eq!(res, -0.1, 1e-1);
+/// assert_eq!(up, -1.0);
 /// ```
-pub fn carry_over(
-    value: f64,
-    target: f64,
-) -> (f64, f64) {
-    let mut quotient = value.abs() / target;
+pub fn overflow(value: f64, base: f64) -> (f64, f64) {
+    let remainder = value % base;
+    let divisible = value - remainder;
+    let quotient = divisible / base;
 
-    quotient = if value < 0.0 {
-        quotient.ceil()
-    } else {
-        quotient.floor()
-    };
-
-    let largest = target * quotient;
-
-    let result = if value < 0.0 {
-        value + largest
-    } else {
-        value - largest
-    };
-
-    if value < 0.0 && quotient != 0.0 {
-        quotient = -quotient;
-    }
-
-    (result, quotient)
+    (remainder, quotient)
 }
 
 pub fn normalize_angle(value: f64, max: f64) -> f64 {

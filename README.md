@@ -3,17 +3,33 @@
 ## About
 
 "sowngwala" is a library for calculating sun's position.
-__"sowng-"__ stands for the _"sun"_ in
-_[Belter language](https://expanse.fandom.com/wiki/Belter_Creole)_
-from a sci-fi TV series _"The Expanse" (2015)_.
-__"-wala"__ for )"one who is professional at"_.
 
 Programs are mainly based on:
 
 - [Peter Duffett-Smith "Practical Astronomy With Your Calculator"  
 (The Press Syndicate of the University of Cambridge, 1988)](https://books.google.co.jp/books?id=DwJfCtzaVvYC&hl=ja&source=gbs_book_similarbooks)
 
+__"sowng-"__ stands for the _"sun"_ in
+_[Belter language](https://expanse.fandom.com/wiki/Belter_Creole)_
+from a sci-fi TV series _"The Expanse" (2015)_.
+__"-wala"__ for )"one who is professional at"_.
+
+## Updates
+
+### 2024.2.5
+- Renamed `utils::carry_over` to `utils::overflow`.
+- Removed `time.normalize_angle` but implemented the similar method in `coords.Angle` now implements `calibrate` with some known bugs for having negative values for `hour`, `minute`, and `second`.
+- Correspondingly, `time.eot_fortified_utc_from_fixed` now takes negative overflows into consideration.
+- `sun.equation_of_time_from_gst` now returns `(Angle, f64)` instead of `Angle` the second in the returned tuple denotes the days overflow.
+- The same goes for `sun.equation_of_time_from_utc`.
+- The same goes for `time.decimal_hours_from_angle`.
+
+
 ## Usage
+
+Comments for functions usually contains tests.
+You find a plenty of examples how to use them
+if you take a look at these tests.
 
 ### (Example 1) Julian Day
 

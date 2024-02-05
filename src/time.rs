@@ -12,7 +12,7 @@ use crate::constants::{
 };
 use crate::coords::{Angle, Direction};
 use crate::sun::equation_of_time_from_utc;
-use crate::utils::carry_over;
+use crate::utils::overflow;
 
 /// A handy tool to build `DateTime<FixedOffset>`.
 ///
@@ -817,24 +817,113 @@ where
     dt + Duration::days(days)
 }
 
-pub fn normalize_angle(angle: Angle) -> (Angle, f64) {
-    let (sec, min_excess): (f64, f64) =
-        carry_over(angle.second(), 60.0);
+/// Example
+/// ```rust
+/// use sowngwala::time::calibrate_hmsn;
+///
+/// let ((hour, min, sec), day_excess) = calibrate_hmsn(0, 0, 63.0);
+/// assert_eq!(sec, 3.0);
+/// assert_eq!(min, 1);
+///
+/// let ((hour, min, sec), day_excess) = calibrate_hmsn(0, 63, 0.0);
+/// assert_eq!(min, 3);
+/// assert_eq!(hour, 1);
+///
+/// let ((hour, min, sec), day_excess) = calibrate_hmsn(24, 0, 0.0);
+/// assert_eq!(hour, 0);
+/// assert_eq!(day_excess, 1.0);
+///
+/// let ((hour, min, sec), day_excess) = calibrate_hmsn(23, 59, 60.0);
+/// assert_eq!(sec, 0.0);
+/// assert_eq!(min, 0);
+/// assert_eq!(hour, 0);
+/// assert_eq!(day_excess, 1.0);
+///
+/// let ((hour, min, sec), day_excess) = calibrate_hmsn(0, 1, -1.0);
+/// assert_eq!(sec, 59.0);
+/// assert_eq!(min, 0);
+///
+/// let ((hour, min, sec), day_excess) = calibrate_hmsn(0, 0, -1.0);
+/// assert_eq!(sec, 59.0);
+/// assert_eq!(min, 59);
+/// assert_eq!(hour, 23);
+/// assert_eq!(day_excess, -1.0);
+/// ```
+pub fn calibrate_hmsn(
+    hour: i32,
+    min: i32,
+    sec: f64,
+) -> ((i32, i32, f64), f64) {
+    let mut hour = hour as f64;
+    let mut min = min as f64;
+    let mut sec = sec;
 
-    let min: f64 =
-        (angle.minute() as f64) + min_excess;
-    let (min, hour_excess): (f64, f64) =
-        carry_over(min, 60.0);
+    // Carry over the exceeded
+    // values to the next place.
+    // Say, we had 60 seconds.
+    // It is too much for 'sec'
+    // and we want to carry over
+    // to 'min' by increasing
+    // 'min' by 1. For 'sec'
+    // will now become 0 second.
+    //
+    // Say, we had 23°59'60"
+    // and 60 is too much for
+    // 'sec'. So, we would
+    // return 1 for 'day_excess'
+    // and will make a new
+    // angle being 0°0'0".
 
-    let hour: f64 =
-        (angle.hour() as f64) + hour_excess;
-    let (hour, day_excess): (f64, f64) =
-        carry_over(hour, 24.0);
+    let (sec_2, min_excess): (f64, f64) =
+        overflow(sec, 60.0);
 
-    let angle_1 =
-        Angle::new(hour as i32, min as i32, sec);
+    sec = sec_2;
+    min += min_excess;
 
-    (angle_1, day_excess)
+    let (min_2, hour_excess): (f64, f64) =
+        overflow(min, 60.0);
+
+    min = min_2;
+    hour += hour_excess;
+
+    let (hour_2, day_excess_0): (f64, f64) =
+        overflow(hour, 24.0);
+
+    hour = hour_2;
+
+    let mut day_excess: f64 = day_excess_0;
+
+    // Say, we had -1.0 for
+    // 'sec' which is invalid
+    // for 'sec'. So, we want
+    // to decrease 'min' by 1,
+    // and will now have 59
+    // for 'sec'.
+    //
+    // Say, we had 0°0'-1" for
+    // an angle. Again, -1 is
+    // invalid for 'sec'.
+    // For this, we would return
+    // -1 for 'day_access' and
+    // the new angle will now
+    // become 23°59'59".
+
+    if sec < 0.0 {
+        sec += 60.0;
+        min -= 1.0;
+    }
+
+    if min < 0.0 {
+        min += 60.0;
+        hour -= 1.0;
+    }
+
+    if hour < 0.0 {
+        hour += 24.0;
+        day_excess -= 1.0;
+    }
+
+    ((hour as i32, min as i32, sec), day_excess)
 }
 
 /// Converts `NaiveDateTime` into
@@ -1028,10 +1117,11 @@ pub fn naive_from_utc(
 
 pub fn eot_decimal_from_utc(
     utc: DateTime<Utc>,
-) -> f64 {
-    decimal_hours_from_angle(
-        equation_of_time_from_utc(utc),
-    )
+) -> (f64, f64) {
+    let (eot, day_excess) =
+        equation_of_time_from_utc(utc);
+    let decimal = decimal_hours_from_angle(eot);
+    (decimal, day_excess)
 }
 
 /// Example:
@@ -1066,25 +1156,23 @@ pub fn eot_decimal_from_utc(
 pub fn eot_fortified_utc_from_fixed(
     fixed: DateTime<FixedOffset>,
 ) -> DateTime<Utc> {
-    let utc: DateTime<Utc> = utc_from_fixed(fixed);
+    let utc_0: DateTime<Utc> = utc_from_fixed(fixed);
 
     let utc_decimal: f64 =
         decimal_hours_from_generic_time(
-            naive_from_utc(utc),
+            naive_from_utc(utc_0),
         );
+    let (eot_decimal, day_excess): (f64, f64) =
+        eot_decimal_from_utc(utc_0);
 
-    let eot_decimal: f64 = eot_decimal_from_utc(utc);
-
-    let angle: Angle = angle_from_decimal_hours(
+    let mut angle: Angle = angle_from_decimal_hours(
         utc_decimal + eot_decimal,
     );
-    let (angle_1, day_excess): (Angle, f64) =
-        normalize_angle(angle);
-
-    let t: NaiveTime = angle_1.to_naive_time();
+    angle.calibrate();
+    let t: NaiveTime = angle.to_naive_time();
 
     let utc_1: DateTime<Utc> =
-        add_date(utc, day_excess as i64);
+        add_date(utc_0, day_excess as i64);
 
     build_utc(
         utc_1.year(),
@@ -1132,7 +1220,7 @@ pub fn gst_from_utc(utc: DateTime<Utc>) -> NaiveTime {
         + (2_400.051_336 * t)
         + (0.000_025_862 * t * t);
 
-    let (t0, _factor) = carry_over(t0, 24.0);
+    let (t0, _factor) = overflow(t0, 24.0);
 
     let naive_time =
         naive_time_from_generic_datetime(utc);
@@ -1143,7 +1231,7 @@ pub fn gst_from_utc(utc: DateTime<Utc>) -> NaiveTime {
     decimal += t0;
 
     let (decimal, _factor): (f64, f64) =
-        carry_over(decimal, 24.0);
+        overflow(decimal, 24.0);
 
     naive_time_from_decimal_hours(decimal)
 }
@@ -1192,7 +1280,7 @@ where
         + (2_400.051_336 * t)
         + (0.000_025_862 * t * t);
     let (t0, _factor): (f64, f64) =
-        carry_over(t0, 24.0);
+        overflow(t0, 24.0);
 
     let decimal = decimal_hours_from_generic_time(
         NaiveTime::from_hms_nano(
@@ -1204,7 +1292,7 @@ where
     );
 
     let (decimal, _factor2): (f64, f64) =
-        carry_over(decimal - t0, 24.0);
+        overflow(decimal - t0, 24.0);
 
     naive_time_from_decimal_hours(
         decimal * 0.997_269_566_3,
